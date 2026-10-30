@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import textwrap
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from shakeout.api import Options, ShakeResult, analyze
 from tests.harness.project import write_project
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def shake(tmp_path: Path, files: dict[str, str], entry: str = "main.py", **opts: object) -> ShakeResult:
+
+def shake(
+    tmp_path: Path, files: dict[str, str], entry: str = "main.py", **opts: object
+) -> ShakeResult:
     root = write_project(tmp_path / "proj", files)
     return analyze(root / entry, Options(**opts))  # type: ignore[arg-type]
 

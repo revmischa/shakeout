@@ -2,47 +2,90 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
-from .helpers import lib_statements
+from tests.unit.helpers import lib_statements
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 PURE = [
     ("plain def", "def f(x=1):\n    print(x)\n"),
     ("async def", "async def f():\n    await g()\n"),
-    ("def with pure decorators", "import functools\n@functools.lru_cache(maxsize=None)\ndef f(): pass\n"),
-    ("def with from-imported pure decorator", "from functools import wraps, cache\n@cache\ndef f(): pass\n"),
+    (
+        "def with pure decorators",
+        "import functools\n@functools.lru_cache(maxsize=None)\ndef f(): pass\n",
+    ),
+    (
+        "def with from-imported pure decorator",
+        "from functools import wraps, cache\n@cache\ndef f(): pass\n",
+    ),
     ("staticmethod builtins", "@staticmethod\ndef f(): pass\n"),
-    ("dataclass with field", "from dataclasses import dataclass, field\n@dataclass(frozen=True)\nclass C:\n    x: list = field(default_factory=list)\n"),
-    ("class with plain body", "class C:\n    '''doc'''\n    X = 1\n    y: int\n    def m(self): pass\n    class Inner: pass\n"),
+    (
+        "dataclass with field",
+        "from dataclasses import dataclass, field\n@dataclass(frozen=True)\nclass C:\n    x: list = field(default_factory=list)\n",
+    ),
+    (
+        "class with plain body",
+        "class C:\n    '''doc'''\n    X = 1\n    y: int\n    def m(self): pass\n    class Inner: pass\n",
+    ),
     ("Exception subclass", "class E(Exception):\n    pass\n"),
     ("Enum subclass", "import enum\nclass Color(enum.Enum):\n    RED = 1\n"),
-    ("Generic[T] base", "import typing\nT = typing.TypeVar('T')\nclass B(typing.Generic[T]): pass\n"),
+    (
+        "Generic[T] base",
+        "import typing\nT = typing.TypeVar('T')\nclass B(typing.Generic[T]): pass\n",
+    ),
     ("collections.abc base", "from collections.abc import Mapping\nclass M(Mapping): pass\n"),
-    ("constants", "A = 1\nB = (1, 'x', None)\nC = {'k': [1, {2}]}\nD = -A * 2 if A else 3\nE = f'{A}'\n"),
+    (
+        "constants",
+        "A = 1\nB = (1, 'x', None)\nC = {'k': [1, {2}]}\nD = -A * 2 if A else 3\nE = f'{A}'\n",
+    ),
     ("annotated assignment", "X: int = 3\nY: str\n"),
     ("lambda", "f = lambda x: x + UNKNOWN\n"),
-    ("pure factory calls", "import re, typing\nP = re.compile('x')\nT = typing.TypeVar('T', bound=int)\n"),
+    (
+        "pure factory calls",
+        "import re, typing\nP = re.compile('x')\nT = typing.TypeVar('T', bound=int)\n",
+    ),
     ("builtin constructors", "S = frozenset({1, 2})\nR = range(10)\nD = dict(a=1)\n"),
     ("tuple unpacking", "a, (b, c) = 1, (2, 3)\n"),
     ("stdlib imports", "import os\nimport json as j\nfrom pathlib import Path\n"),
-    ("TYPE_CHECKING block", "from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n    import not_installed_anywhere\n"),
+    (
+        "TYPE_CHECKING block",
+        "from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n    import not_installed_anywhere\n",
+    ),
     ("pass", "pass\n"),
 ]
 
 IMPURE = [
     ("bare call", "print('x')\n", "expr statement"),
     ("unknown decorator", "def deco(f): return f\n@deco\ndef f(): pass\n", "decorator 'deco'"),
-    ("decorator factory", "def route(p):\n    return lambda f: f\n@route('/')\ndef f(): pass\n", "decorator"),
+    (
+        "decorator factory",
+        "def route(p):\n    return lambda f: f\n@route('/')\ndef f(): pass\n",
+        "decorator",
+    ),
     ("impure default", "def f(x=compute()): pass\n", "default argument"),
     ("metaclass keyword", "class C(metaclass=type): pass\n", "class keyword metaclass"),
-    ("init_subclass kwargs", "class B:\n    def __init_subclass__(cls, **k): pass\nclass C(B, tag=1): pass\n", "class keyword tag"),
-    ("subclass of registering base", "class B:\n    def __init_subclass__(cls): pass\nclass C(B): pass\n", "registers subclasses"),
+    (
+        "init_subclass kwargs",
+        "class B:\n    def __init_subclass__(cls, **k): pass\nclass C(B, tag=1): pass\n",
+        "class keyword tag",
+    ),
+    (
+        "subclass of registering base",
+        "class B:\n    def __init_subclass__(cls): pass\nclass C(B): pass\n",
+        "registers subclasses",
+    ),
     ("class body call", "class C:\n    print('x')\n", "class body contains Expr"),
     ("class attr impure init", "class C:\n    x = compute()\n", "class attribute initializer"),
     ("class decorator", "def reg(c): return c\n@reg\nclass C: pass\n", "class decorator"),
-    ("unknown external base", "import socketserver\nclass H(socketserver.BaseRequestHandler): pass\n", "outside the bundle"),
+    (
+        "unknown external base",
+        "import socketserver\nclass H(socketserver.BaseRequestHandler): pass\n",
+        "outside the bundle",
+    ),
     ("base is a variable", "Base = object\nclass C(Base): pass\n", "not a plain class definition"),
     ("attribute store", "import os\nos.environ_copy = 1\n", "attribute or item"),
     ("item store", "D = {}\nD['k'] = 1\n", "attribute or item"),
@@ -82,7 +125,8 @@ def test_pure_pragma_overrides(tmp_path: Path) -> None:
 
 def test_keep_pragma_is_root_and_effect(tmp_path: Path) -> None:
     st = _last(lib_statements(tmp_path, "def f():  # shakeout: keep\n    pass\n"))
-    assert st.root and st.impure
+    assert st.root
+    assert st.impure
 
 
 def test_module_docstring_and_dunders_are_roots(tmp_path: Path) -> None:
@@ -93,30 +137,38 @@ def test_module_docstring_and_dunders_are_roots(tmp_path: Path) -> None:
 
 def test_main_guard_is_dead_outside_entry(tmp_path: Path) -> None:
     st = _last(lib_statements(tmp_path, "if __name__ == '__main__':\n    print(1)\n"))
-    assert st.dead and st.kind == "main_guard"
+    assert st.dead
+    assert st.kind == "main_guard"
 
 
 def test_effects_propagate_through_imports(tmp_path: Path) -> None:
-    from .helpers import shake
+    from tests.unit.helpers import shake
 
-    result = shake(tmp_path, {
-        "main.py": "import a\n",
-        "a.py": "import b\n",
-        "b.py": "import c\n",
-        "c.py": "print('side effect')\n",
-        "d.py": "",
-    })
+    result = shake(
+        tmp_path,
+        {
+            "main.py": "import a\n",
+            "a.py": "import b\n",
+            "b.py": "import c\n",
+            "c.py": "print('side effect')\n",
+            "d.py": "",
+        },
+    )
     assert all(result.modules[m].has_effects for m in ("a", "b", "c"))
     assert result.bundled_modules >= {"a", "b", "c"}
 
 
 def test_cyclic_pure_modules_are_pure(tmp_path: Path) -> None:
-    from .helpers import shake
+    from tests.unit.helpers import shake
 
-    result = shake(tmp_path, {
-        "main.py": "import a\n",
-        "a.py": "import b\ndef fa(): return b\n",
-        "b.py": "import a\ndef fb(): return a\n",
-    })
-    assert not result.modules["a"].has_effects and not result.modules["b"].has_effects
+    result = shake(
+        tmp_path,
+        {
+            "main.py": "import a\n",
+            "a.py": "import b\ndef fa(): return b\n",
+            "b.py": "import a\ndef fb(): return a\n",
+        },
+    )
+    assert not result.modules["a"].has_effects
+    assert not result.modules["b"].has_effects
     assert result.dropped_modules == {"a", "b"}

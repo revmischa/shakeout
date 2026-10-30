@@ -1,22 +1,48 @@
-"""Read [tool.shakeout] from pyproject.toml and merge with command-line flags."""
+"""Read ``[tool.shakeout]`` from pyproject.toml."""
 
 from __future__ import annotations
 
 import sys
-from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-_KEYS = {
-    "entry": str, "target": str, "out": str, "keep": list, "include": list,
-    "pure-calls": list, "assume-pure-bases": bool, "roots": list, "tombstones": bool,
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover - exercised only on 3.10
+    import tomli as tomllib  # pyright: ignore[reportMissingImports]
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+KEYS: dict[str, type] = {
+    "entry": str,
+    "target": str,
+    "out": str,
+    "keep": list,
+    "include": list,
+    "exports": list,
+    "pure-calls": list,
+    "assume-pure-bases": bool,
+    "roots": list,
+    "search-path": list,
+    "tombstones": bool,
+    "embed-source": bool,
+    "minify": bool,
+    "strip-docstrings": bool,
+    "copy-dependencies": bool,
+    "uv": bool,
+    "python-version": str,
+    "platform": str,
 }
+_PATH_KEYS = ("entry", "out")
+_PATH_LIST_KEYS = ("roots", "search-path")
 
 
 class ConfigError(ValueError):
-    pass
+    """Invalid configuration or arguments."""
 
 
 def find_pyproject(start: Path) -> Path | None:
+    """Nearest ``pyproject.toml`` in ``start`` or its parents."""
     for directory in [start, *start.parents]:
         candidate = directory / "pyproject.toml"
         if candidate.is_file():
@@ -24,39 +50,39 @@ def find_pyproject(start: Path) -> Path | None:
     return None
 
 
-def _parse_toml(path: Path) -> dict[str, Any]:
-    if sys.version_info >= (3, 11):
-        import tomllib
-    else:  # pragma: no cover
-        try:
-            import tomli as tomllib  # pyright: ignore[reportMissingImports]
-        except ImportError:
-            return {}
-    try:
-        loads: Any = tomllib.loads  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-        return cast(dict[str, Any], loads(path.read_text(encoding="utf-8")))
-    except ValueError as exc:  # tomllib.TOMLDecodeError subclasses ValueError
-        raise ConfigError(f"{path}: {exc}") from exc
-
-
 def load_config(pyproject: Path | None) -> dict[str, Any]:
+    """The validated ``[tool.shakeout]`` table, with paths made absolute.
+
+    Raises:
+        ConfigError: The file is not valid TOML or the table has unknown keys or wrong types.
+    """
     if pyproject is None:
         return {}
-    data = _parse_toml(pyproject)
+    try:
+        data = cast("dict[str, Any]", tomllib.loads(pyproject.read_text(encoding="utf-8")))
+    except ValueError as exc:  # tomllib.TOMLDecodeError subclasses ValueError
+        msg = f"{pyproject}: {exc}"
+        raise ConfigError(msg) from exc
     tool: object = data.get("tool", {})
-    raw: object = cast(dict[str, Any], tool).get("shakeout", {}) if isinstance(tool, dict) else {}
+    raw: object = cast("dict[str, Any]", tool).get("shakeout", {}) if isinstance(tool, dict) else {}
     if not isinstance(raw, dict):
-        raise ConfigError(f"{pyproject}: [tool.shakeout] must be a table")
-    section = cast(dict[str, Any], raw)
+        msg = f"{pyproject}: [tool.shakeout] must be a table"
+        raise ConfigError(msg)
+    section = cast("dict[str, Any]", raw)
     for key, value in section.items():
-        if key not in _KEYS:
-            raise ConfigError(f"{pyproject}: unknown [tool.shakeout] key {key!r}")
-        if not isinstance(value, _KEYS[key]):
-            raise ConfigError(f"{pyproject}: [tool.shakeout] {key} must be a {_KEYS[key].__name__}")
+        expected = KEYS.get(key)
+        if expected is None:
+            msg = f"{pyproject}: unknown [tool.shakeout] key {key!r}"
+            raise ConfigError(msg)
+        if not isinstance(value, expected):
+            msg = f"{pyproject}: [tool.shakeout] {key} must be a {expected.__name__}"
+            raise ConfigError(msg)
     base = pyproject.parent
-    for key in ("entry", "out"):
+    for key in _PATH_KEYS:
         if key in section:
             section[key] = str(base / section[key])
-    if "roots" in section:
-        section["roots"] = [str(base / r) for r in section["roots"]]
+    for key in _PATH_LIST_KEYS:
+        if key in section:
+            section[key] = [str(base / r) for r in section[key]]
+    section["_project"] = str(base)
     return section

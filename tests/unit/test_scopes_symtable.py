@@ -22,11 +22,18 @@ from shakeout.analysis.scopes import ImportContext, collect
 from shakeout.model import NameTarget, split_lines
 
 # Names the compiler synthesizes (PEP 649/695 machinery); never user-visible globals.
-COMPILER_INTERNAL = {"__class__", "__classdict__", "__classdictcell__",
-                     "__conditional_annotations__", "__annotate__", "__type_params__"}
+COMPILER_INTERNAL = {
+    "__class__",
+    "__classdict__",
+    "__classdictcell__",
+    "__conditional_annotations__",
+    "__annotate__",
+    "__type_params__",
+}
 STDLIB = Path(sysconfig.get_paths()["stdlib"])
 ALL_FILES = sorted(
-    p for p in STDLIB.rglob("*.py")
+    p
+    for p in STDLIB.rglob("*.py")
     if "site-packages" not in p.parts and "test" not in p.parts and "tests" not in p.parts
 )
 SAMPLE = ALL_FILES[:: max(1, len(ALL_FILES) // 120)]
@@ -57,6 +64,7 @@ def _symtable_globals(source: str) -> set[str]:
         if sys.version_info >= (3, 12) and not hasattr(symtable.Symbol, "is_comp_iter")
         else set()
     )
+
     # Python 3.12+ inlines comprehensions (PEP 709) and reports their iteration variables in
     # the enclosing table; they are comprehension-local, not globals.
     def comp_local(sym: symtable.Symbol) -> bool:
@@ -69,8 +77,11 @@ def _symtable_globals(source: str) -> set[str]:
         table = stack.pop()
         stack.extend(table.get_children())
         for sym in table.get_symbols():
-            if sym.is_referenced() and not comp_local(sym) and not sym.is_parameter() and (
-                sym.is_global() or sym.is_declared_global()
+            if (
+                sym.is_referenced()
+                and not comp_local(sym)
+                and not sym.is_parameter()
+                and (sym.is_global() or sym.is_declared_global())
             ):
                 names.add(sym.get_name())
     return names
@@ -106,7 +117,9 @@ def _check_file(path: Path) -> list[str]:
                 expected = _symtable_globals(segment)
         except SyntaxError:
             continue  # e.g. 'return' outside function is impossible here, but be safe
-        missing = {n for n in expected - _shakeout_globals(stmt) if not n.startswith(".")} - COMPILER_INTERNAL
+        missing = {
+            n for n in expected - _shakeout_globals(stmt) if not n.startswith(".")
+        } - COMPILER_INTERNAL
         if missing:
             problems.append(f"{path.relative_to(STDLIB)}:{start}: missing {sorted(missing)}")
     return problems
@@ -117,6 +130,7 @@ def test_no_global_reference_is_missed_sample(path: Path) -> None:
     assert _check_file(path) == []
 
 
-def test_no_global_reference_is_missed_full_stdlib() -> None:
-    problems = [p for path in ALL_FILES for p in _check_file(path)]
+@pytest.mark.parametrize("shard", range(8))
+def test_no_global_reference_is_missed_full_stdlib(shard: int) -> None:
+    problems = [p for path in ALL_FILES[shard::8] for p in _check_file(path)]
     assert problems == [], "\n".join(problems[:50])

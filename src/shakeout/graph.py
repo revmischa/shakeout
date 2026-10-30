@@ -6,7 +6,7 @@ import ast
 from collections import deque
 from dataclasses import dataclass, field
 
-from .model import FromTarget, Module, ModuleTarget, NameTarget, Ref, Statement, Target
+from shakeout.model import FromTarget, Module, ModuleTarget, NameTarget, Ref, Statement, Target
 
 StmtKey = tuple[str, int]
 
@@ -16,10 +16,16 @@ _WHOLE_MODULE_ATTRS = frozenset({"__dict__"})
 
 @dataclass
 class Resolution:
-    traversed: set[StmtKey] = field(default_factory=set[StmtKey])  # binders passed through (incl. imports)
-    terminal: set[StmtKey] = field(default_factory=set[StmtKey])  # binders that define a value locally
+    traversed: set[StmtKey] = field(
+        default_factory=set[StmtKey]
+    )  # binders passed through (incl. imports)
+    terminal: set[StmtKey] = field(
+        default_factory=set[StmtKey]
+    )  # binders that define a value locally
     whole: set[str] = field(default_factory=set[str])  # modules escaping as values
-    names: set[tuple[str, int, str]] = field(default_factory=set[tuple[str, int, str]])  # (module, stmt, bound name)
+    names: set[tuple[str, int, str]] = field(
+        default_factory=set[tuple[str, int, str]]
+    )  # (module, stmt, bound name)
 
     def merge(self, other: Resolution) -> None:
         self.traversed |= other.traversed
@@ -41,7 +47,6 @@ class Resolver:
             return self._name(module, base.name, attrs)
         if isinstance(base, ModuleTarget):
             return self._in_module(base.module, attrs)
-        assert isinstance(base, FromTarget)
         return self._name(base.module, base.attr, attrs)
 
     def resolve_ref(self, module: str, ref: Ref) -> Resolution:
@@ -81,9 +86,14 @@ class Resolver:
 
 @dataclass(frozen=True)
 class Reason:
-    kind: str  # "root" | "ref" | "whole" | "keep" | "noshake"
+    """Why a statement is kept: ``kind`` is root, ref, whole, keep or noshake."""
+
+    kind: str
     detail: str
     parent: StmtKey | None = None
+
+    def __str__(self) -> str:
+        return f"{self.kind}: {self.detail}"
 
 
 @dataclass
@@ -92,7 +102,9 @@ class ShakeState:
     loaded: set[str] = field(default_factory=set[str])
     whole: set[str] = field(default_factory=set[str])
     reasons: dict[StmtKey, Reason] = field(default_factory=dict[StmtKey, Reason])
-    used: dict[StmtKey, set[str]] = field(default_factory=dict[StmtKey, set[str]])  # bound names actually used
+    used: dict[StmtKey, set[str]] = field(
+        default_factory=dict[StmtKey, set[str]]
+    )  # bound names actually used
 
 
 class Shaker:
@@ -139,14 +151,16 @@ class Shaker:
         self.state.reasons[key] = reason
         self._queue.append(key)
 
-    def keep_symbol(self, module: str, name: str) -> None:
+    def keep_symbol(self, module: str, name: str, *, why: str = "") -> None:
+        """Keep whatever ``module:name`` resolves to, as if something referenced it."""
+        why = why or f"keep option {module}:{name}"
         self.load(module)
         res = self.resolver.resolve(module, NameTarget(name), ())
         for key in sorted(res.traversed):
-            self.mark(key, Reason("keep", f"keep option {module}:{name}"))
-        self._use(res, None)
+            self.mark(key, Reason("keep", why))
+        self._use(res)
         for mod in sorted(res.whole):
-            self.make_whole(mod, f"keep option {module}:{name}")
+            self.make_whole(mod, why)
 
     def run(self) -> ShakeState:
         while self._queue:
@@ -166,13 +180,12 @@ class Shaker:
                 label = ".".join((_base_name(ref), *ref.attrs))
                 for target in sorted(res.traversed):
                     self.mark(target, Reason("ref", label, key))
-                self._use(res, key)
+                self._use(res)
                 for mod in sorted(res.whole):
                     self.make_whole(mod, f"module object used as a value ({label}) at {st.id}")
         return self.state
 
-
-    def _use(self, res: Resolution, parent: StmtKey | None) -> None:
+    def _use(self, res: Resolution) -> None:
         """Record which bound names were used; a used ``from x import y`` needs ``y`` to exist."""
         for module, idx, name in sorted(res.names):
             self._use_name((module, idx), name)
@@ -198,7 +211,7 @@ class Shaker:
                 res = self.resolver.resolve(st.module, target, ())
                 for binder in sorted(res.traversed):
                     self.mark(binder, Reason("ref", f"imported by {st.id}", key))
-                self._use(res, key)
+                self._use(res)
 
 
 def is_rewritable_import(st: Statement) -> bool:

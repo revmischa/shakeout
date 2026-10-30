@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from .project import ShakeResult
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from shakeout.result import ShakeResult
 
 
 def _first_line(text: str, width: int = 48) -> str:
@@ -12,10 +15,12 @@ def _first_line(text: str, width: int = 48) -> str:
 
 def render_report(result: ShakeResult) -> str:
     out: list[str] = []
-    for name in sorted(result.modules, key=lambda n: (n != "__main__", n)):
+    for name in sorted(result.modules, key=lambda n: (n != result.entry_module, n)):
         mod = result.modules[name]
         status = "bundled" if name in result.loaded else "dropped"
-        extra = f", kept whole: {mod.whole_reason}" if mod.whole_reason and status == "bundled" else ""
+        extra = (
+            f", kept whole: {mod.whole_reason}" if mod.whole_reason and status == "bundled" else ""
+        )
         out.append(f"module {name} [{mod.filename}] {status}{extra}")
         lines = mod.lines
         for st in mod.statements:
@@ -38,6 +43,5 @@ def render_report(result: ShakeResult) -> str:
     externals = sorted(n for n in result.externals if "." not in n)
     if externals:
         out.append("external: " + ", ".join(externals))
-    for diag in result.diagnostics:
-        out.append(str(diag))
+    out.extend(str(diag) for diag in result.diagnostics)
     return "\n".join(out) + "\n"

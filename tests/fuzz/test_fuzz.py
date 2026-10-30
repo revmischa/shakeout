@@ -13,12 +13,11 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 from shakeout.api import analyze, build
+from tests.fuzz.generator import Program, programs, render
 from tests.harness.project import write_project
 from tests.harness.run import run_python
 from tests.harness.soundness import check_soundness, trace_execution
 from tests.harness.tracebacks import normalize_stderr
-
-from .generator import Program, programs, render
 
 FAILURES = Path(__file__).with_name("failures")
 EXAMPLES = int(os.environ.get("SHAKEOUT_FUZZ_EXAMPLES", "40"))
@@ -46,8 +45,14 @@ def check_program(files: dict[str, str]) -> None:
             got = run_python(built.run_path, cwd=root / f"c-{target}")
             assert got.stdout == original.stdout, f"{target} stdout differs\n{got.describe()}"
             assert got.returncode == 0, got.describe()
-            assert normalize_stderr(got.stderr, strip_prefixes=[str(root / target)],
-                                    runtime_files=built.runtime_files) == ""
+            assert (
+                normalize_stderr(
+                    got.stderr,
+                    strip_prefixes=[str(root / target)],
+                    runtime_files=built.runtime_files,
+                )
+                == ""
+            )
         result = analyze(src / "main.py")
         _, records = trace_execution(src / "main.py", cwd=root / "ct")
         violations = check_soundness(records, list(result.statements))

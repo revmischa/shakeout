@@ -12,10 +12,12 @@ effects, and the listed pure callables do not call back into user code.
 from __future__ import annotations
 
 import ast
-from collections.abc import Callable
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
-from ..model import FromTarget, ImportTarget, ModuleTarget
+from shakeout.model import ImportTarget, ModuleTarget
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _TYPING = ("typing", "typing_extensions")
 
@@ -26,49 +28,165 @@ def _qualified(*names: str) -> frozenset[str]:
 
 PURE_CALLABLES = _qualified(
     # builtins that construct values and never call user callbacks
-    *(f"builtins.{n}" for n in (
-        "object", "int", "float", "complex", "str", "bytes", "bytearray", "bool", "tuple",
-        "list", "dict", "set", "frozenset", "range", "slice", "len", "repr", "ord", "chr",
-        "hex", "oct", "bin", "abs", "round", "property", "staticmethod", "classmethod",
-        "isinstance", "issubclass", "callable", "id", "memoryview",
-    )),
-    *(f"{m}.{n}" for m in _TYPING for n in (
-        "TypeVar", "NewType", "ParamSpec", "TypeVarTuple", "NamedTuple", "TypedDict", "cast",
-        "overload", "final", "runtime_checkable", "no_type_check", "dataclass_transform",
-        "override", "TypeAliasType", "get_type_hints", "deprecated",
-    )),
-    "collections.namedtuple", "collections.OrderedDict", "collections.defaultdict",
-    "collections.deque", "collections.Counter", "collections.ChainMap",
-    "re.compile", "dataclasses.field", "dataclasses.dataclass", "dataclasses.make_dataclass",
-    "functools.partial", "functools.lru_cache", "functools.cache", "functools.wraps",
-    "functools.cached_property", "functools.total_ordering", "functools.singledispatch",
-    "functools.singledispatchmethod", "functools.partialmethod",
-    "contextlib.contextmanager", "contextlib.asynccontextmanager",
-    "abc.abstractmethod", "abc.abstractproperty", "abc.abstractclassmethod",
+    *(
+        f"builtins.{n}"
+        for n in (
+            "object",
+            "int",
+            "float",
+            "complex",
+            "str",
+            "bytes",
+            "bytearray",
+            "bool",
+            "tuple",
+            "list",
+            "dict",
+            "set",
+            "frozenset",
+            "range",
+            "slice",
+            "len",
+            "repr",
+            "ord",
+            "chr",
+            "hex",
+            "oct",
+            "bin",
+            "abs",
+            "round",
+            "property",
+            "staticmethod",
+            "classmethod",
+            "isinstance",
+            "issubclass",
+            "callable",
+            "id",
+            "memoryview",
+        )
+    ),
+    *(
+        f"{m}.{n}"
+        for m in _TYPING
+        for n in (
+            "TypeVar",
+            "NewType",
+            "ParamSpec",
+            "TypeVarTuple",
+            "NamedTuple",
+            "TypedDict",
+            "cast",
+            "overload",
+            "final",
+            "runtime_checkable",
+            "no_type_check",
+            "dataclass_transform",
+            "override",
+            "TypeAliasType",
+            "get_type_hints",
+            "deprecated",
+        )
+    ),
+    "collections.namedtuple",
+    "collections.OrderedDict",
+    "collections.defaultdict",
+    "collections.deque",
+    "collections.Counter",
+    "collections.ChainMap",
+    "re.compile",
+    "dataclasses.field",
+    "dataclasses.dataclass",
+    "dataclasses.make_dataclass",
+    "functools.partial",
+    "functools.lru_cache",
+    "functools.cache",
+    "functools.wraps",
+    "functools.cached_property",
+    "functools.total_ordering",
+    "functools.singledispatch",
+    "functools.singledispatchmethod",
+    "functools.partialmethod",
+    "contextlib.contextmanager",
+    "contextlib.asynccontextmanager",
+    "abc.abstractmethod",
+    "abc.abstractproperty",
+    "abc.abstractclassmethod",
     "abc.abstractstaticmethod",
-    "enum.auto", "enum.unique", "enum.verify", "enum.member", "enum.nonmember",
-    "logging.getLogger", "operator.itemgetter", "operator.attrgetter", "operator.methodcaller",
-    "pathlib.Path", "pathlib.PurePath", "pathlib.PurePosixPath", "pathlib.PureWindowsPath",
-    "decimal.Decimal", "fractions.Fraction", "datetime.timedelta", "datetime.date",
-    "datetime.datetime", "datetime.time", "datetime.timezone",
-    "types.MappingProxyType", "types.SimpleNamespace", "struct.Struct", "string.Template",
-    "threading.Lock", "threading.RLock", "threading.local", "threading.Event",
-    "weakref.WeakValueDictionary", "weakref.WeakKeyDictionary", "weakref.WeakSet",
-    "weakref.ref", "contextvars.ContextVar", "uuid.UUID", "ipaddress.ip_address",
+    "enum.auto",
+    "enum.unique",
+    "enum.verify",
+    "enum.member",
+    "enum.nonmember",
+    "logging.getLogger",
+    "operator.itemgetter",
+    "operator.attrgetter",
+    "operator.methodcaller",
+    "pathlib.Path",
+    "pathlib.PurePath",
+    "pathlib.PurePosixPath",
+    "pathlib.PureWindowsPath",
+    "decimal.Decimal",
+    "fractions.Fraction",
+    "datetime.timedelta",
+    "datetime.date",
+    "datetime.datetime",
+    "datetime.time",
+    "datetime.timezone",
+    "types.MappingProxyType",
+    "types.SimpleNamespace",
+    "struct.Struct",
+    "string.Template",
+    "threading.Lock",
+    "threading.RLock",
+    "threading.local",
+    "threading.Event",
+    "weakref.WeakValueDictionary",
+    "weakref.WeakKeyDictionary",
+    "weakref.WeakSet",
+    "weakref.ref",
+    "contextvars.ContextVar",
+    "uuid.UUID",
+    "ipaddress.ip_address",
     "ipaddress.ip_network",
 )
 
 # Bases whose subclassing has no global side effects.
 PURE_BASES = _qualified(
-    *(f"{m}.{n}" for m in _TYPING for n in (
-        "NamedTuple", "TypedDict", "Protocol", "Generic", "Any",
-    )),
-    "abc.ABC", "enum.Enum", "enum.IntEnum", "enum.Flag", "enum.IntFlag", "enum.StrEnum",
-    "enum.ReprEnum", "collections.OrderedDict", "collections.defaultdict", "collections.UserDict",
-    "collections.UserList", "collections.UserString", "collections.namedtuple",
-    "threading.Thread", "threading.local", "json.JSONEncoder", "json.JSONDecoder",
-    "argparse.Action", "argparse.ArgumentParser", "string.Formatter", "io.StringIO",
-    "io.BytesIO", "contextlib.AbstractContextManager", "contextlib.ContextDecorator",
+    *(
+        f"{m}.{n}"
+        for m in _TYPING
+        for n in (
+            "NamedTuple",
+            "TypedDict",
+            "Protocol",
+            "Generic",
+            "Any",
+        )
+    ),
+    "abc.ABC",
+    "enum.Enum",
+    "enum.IntEnum",
+    "enum.Flag",
+    "enum.IntFlag",
+    "enum.StrEnum",
+    "enum.ReprEnum",
+    "collections.OrderedDict",
+    "collections.defaultdict",
+    "collections.UserDict",
+    "collections.UserList",
+    "collections.UserString",
+    "collections.namedtuple",
+    "threading.Thread",
+    "threading.local",
+    "json.JSONEncoder",
+    "json.JSONDecoder",
+    "argparse.Action",
+    "argparse.ArgumentParser",
+    "string.Formatter",
+    "io.StringIO",
+    "io.BytesIO",
+    "contextlib.AbstractContextManager",
+    "contextlib.ContextDecorator",
     "html.parser.HTMLParser",
 )
 PURE_BASE_MODULES = frozenset({"collections.abc", "numbers", "typing", "typing_extensions"})
@@ -91,47 +209,18 @@ class EffectRules:
         return q is not None and q in self.pure_callables
 
     def pure_expr(self, node: ast.expr | None) -> bool:
-        if node is None:
+        """Whether evaluating ``node`` at module level has no observable side effects."""
+        if node is None or isinstance(node, (ast.Constant, ast.Name, ast.Lambda)):
             return True
-        match node:
-            case ast.Constant() | ast.Name() | ast.Lambda():
-                return True
-            case ast.Attribute(value=value):
-                return self.pure_expr(value)
-            case ast.Subscript(value=value, slice=slc):
-                return self.pure_expr(value) and self.pure_expr(slc)
-            case ast.Tuple(elts=elts) | ast.List(elts=elts) | ast.Set(elts=elts):
-                return all(self.pure_expr(e) for e in elts)
-            case ast.Starred(value=value):
-                return self.pure_expr(value)
-            case ast.Dict(keys=keys, values=values):
-                return all(self.pure_expr(k) for k in keys) and all(
-                    self.pure_expr(v) for v in values)
-            case ast.BinOp(left=left, right=right):
-                return self.pure_expr(left) and self.pure_expr(right)
-            case ast.UnaryOp(operand=operand):
-                return self.pure_expr(operand)
-            case ast.BoolOp(values=values):
-                return all(self.pure_expr(v) for v in values)
-            case ast.Compare(left=left, comparators=comps):
-                return self.pure_expr(left) and all(self.pure_expr(c) for c in comps)
-            case ast.IfExp(test=test, body=body, orelse=orelse):
-                return self.pure_expr(test) and self.pure_expr(body) and self.pure_expr(orelse)
-            case ast.JoinedStr(values=values):
-                return all(self.pure_expr(v) for v in values)
-            case ast.FormattedValue(value=value, format_spec=spec):
-                return self.pure_expr(value) and self.pure_expr(spec)
-            case ast.Slice(lower=lo, upper=up, step=step):
-                return self.pure_expr(lo) and self.pure_expr(up) and self.pure_expr(step)
-            case ast.Call(func=func, args=args, keywords=keywords):
-                return (
-                    self.pure_callable(func)
-                    and all(self.pure_expr(a) for a in args)
-                    and all(self.pure_expr(k.value) for k in keywords)
-                )
-            case _:
-                # Comprehensions iterate (may call user __iter__), walrus binds, await/yield...
-                return False
+        if isinstance(node, ast.Call):
+            return (
+                self.pure_callable(node.func)
+                and all(self.pure_expr(a) for a in node.args)
+                and all(self.pure_expr(k.value) for k in node.keywords)
+            )
+        children = _PURE_IF_CHILDREN_PURE.get(type(node))
+        # Anything else (comprehensions may call user __iter__, walrus binds, await...) is impure.
+        return children is not None and all(self.pure_expr(c) for c in children(node))
 
     def pure_decorator(self, node: ast.expr) -> bool:
         if isinstance(node, ast.Call):
@@ -170,13 +259,18 @@ class EffectRules:
                 return self.function_effect(stmt)
             case ast.ClassDef():
                 return self.class_shell_effect(stmt) or (
-                    None if all(self.pure_expr(b) for b in stmt.bases) else "nested class base")
+                    None if all(self.pure_expr(b) for b in stmt.bases) else "nested class base"
+                )
             case ast.Assign(targets=targets, value=value):
                 if all(isinstance(t, ast.Name) for t in targets) and self.pure_expr(value):
                     return None
                 return "class attribute initializer may have side effects"
             case ast.AnnAssign(target=ast.Name(), value=value):
-                return None if self.pure_expr(value) else "class attribute initializer may have side effects"
+                return (
+                    None
+                    if self.pure_expr(value)
+                    else "class attribute initializer may have side effects"
+                )
             case ast.Expr(value=ast.Constant()) | ast.Pass():
                 return None
             case _:
@@ -189,7 +283,7 @@ class EffectRules:
         else:
             if stmt.value is None and isinstance(stmt.target, ast.Name):
                 return None
-            targets, value = [cast(ast.expr, stmt.target)], stmt.value
+            targets, value = [cast("ast.expr", stmt.target)], stmt.value
         for t in targets:
             for sub in ast.walk(t):
                 if isinstance(sub, (ast.Attribute, ast.Subscript)):
@@ -199,11 +293,14 @@ class EffectRules:
         return None
 
 
+_SHORT = 40
+
+
 def _short(node: ast.expr | None) -> str:
     if node is None:
         return "''"
     text = ast.unparse(node)
-    return repr(text if len(text) <= 40 else text[:37] + "...")
+    return repr(text if len(text) <= _SHORT else text[: _SHORT - 3] + "...")
 
 
 def is_main_guard(node: ast.stmt) -> bool:
@@ -228,7 +325,41 @@ def is_type_checking_guard(node: ast.stmt, qualify: Callable[[ast.expr], str | N
 
 
 def qualify_target(target: ImportTarget, attrs: tuple[str, ...]) -> str:
+    """Dotted name of ``attrs`` reached through an import target."""
     if isinstance(target, ModuleTarget):
         return ".".join((target.module, *attrs))
-    assert isinstance(target, FromTarget)
     return ".".join((target.module, target.attr, *attrs))
+
+
+def _children(*fields: str) -> Callable[[ast.AST], list[ast.expr | None]]:
+    def get(node: ast.AST) -> list[ast.expr | None]:
+        out: list[ast.expr | None] = []
+        for name in fields:
+            value: object = getattr(node, name)
+            if isinstance(value, list):
+                out.extend(cast("list[ast.expr | None]", value))
+            else:
+                out.append(cast("ast.expr | None", value))
+        return out
+
+    return get
+
+
+# Expressions that are pure exactly when all of their sub-expressions are pure.
+_PURE_IF_CHILDREN_PURE: dict[type[ast.AST], Callable[[ast.AST], list[ast.expr | None]]] = {
+    ast.Attribute: _children("value"),
+    ast.Subscript: _children("value", "slice"),
+    ast.Tuple: _children("elts"),
+    ast.List: _children("elts"),
+    ast.Set: _children("elts"),
+    ast.Starred: _children("value"),
+    ast.Dict: _children("keys", "values"),
+    ast.BinOp: _children("left", "right"),
+    ast.UnaryOp: _children("operand"),
+    ast.BoolOp: _children("values"),
+    ast.Compare: _children("left", "comparators"),
+    ast.IfExp: _children("test", "body", "orelse"),
+    ast.JoinedStr: _children("values"),
+    ast.FormattedValue: _children("value", "format_spec"),
+    ast.Slice: _children("lower", "upper", "step"),
+}

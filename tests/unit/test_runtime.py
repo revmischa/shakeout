@@ -34,14 +34,19 @@ def test_serves_packages_and_preserves_lines(bootstrap) -> None:
     bootstrap(modules, entry, {}, g)
     assert "_shakeout_x" not in g
     sub = g["result"]
-    assert sub.__name__ == "rt_pkg.sub" and sub.__package__ == "rt_pkg"
+    assert sub.__name__ == "rt_pkg.sub"
+    assert sub.__package__ == "rt_pkg"
     assert sys.modules["rt_pkg"].__path__ == []
     assert sub.__file__ == "rt_pkg/sub.py"
     try:
         sub.boom()
     except ValueError as exc:
         frame = traceback.extract_tb(exc.__traceback__)[-1]
-        assert (frame.filename, frame.lineno, frame.line) == ("rt_pkg/sub.py", 6, "raise ValueError('x')")
+        assert (frame.filename, frame.lineno, frame.line) == (
+            "rt_pkg/sub.py",
+            6,
+            "raise ValueError('x')",
+        )
     assert linecache.getline("rt_pkg/sub.py", 5) == "def boom():\n"
 
 
@@ -79,3 +84,25 @@ def test_system_exit_passes_through_untouched(bootstrap) -> None:
         bootstrap({}, entry, {}, {"__name__": "__rt__"})
     assert info.value.code == 4
     assert not getattr(info.value, "__notes__", None)
+
+
+def test_runtime_defines_only_prefixed_names() -> None:
+    ns: dict[str, object] = {}
+    exec(compile(RUNTIME.read_text(), str(RUNTIME), "exec"), ns)
+    public = {k for k in ns if not k.startswith("__")}
+    assert public - {"annotations", "TYPE_CHECKING"} == {
+        k for k in public if k.lower().startswith("_shakeout")
+    }
+
+
+def test_bundle_globals_are_clean(tmp_path: Path) -> None:
+    from shakeout.api import build
+    from tests.harness.project import write_project
+    from tests.harness.run import run_python
+
+    src = write_project(
+        tmp_path / "src",
+        {"main.py": "print(sorted(k for k in globals() if not k.startswith('__')))\n"},
+    )
+    built = build(src / "main.py", tmp_path / "out")
+    assert run_python(built.run_path, cwd=tmp_path).stdout == "[]\n"

@@ -33,7 +33,7 @@ def _module_line(code, frame):
     return None
 
 
-def _record(code, frame):
+def _record(code, frame) -> None:
     if not code.co_flags & CO_OPTIMIZED:
         return
     key = (os.path.realpath(code.co_filename), code.co_firstlineno, code.co_name)
@@ -49,12 +49,12 @@ def _record(code, frame):
         rec["module_lines"].append(line)
 
 
-def _install():
+def _install() -> None:
     if hasattr(sys, "monitoring"):
         mon = sys.monitoring
         tool = mon.PROFILER_ID
 
-        def on_start(code, offset):
+        def on_start(code, offset) -> None:
             _record(code, sys._getframe(1))
 
         mon.use_tool_id(tool, "shakeout-soundness")
@@ -62,7 +62,7 @@ def _install():
         mon.set_events(tool, mon.events.PY_START)
     else:  # Python < 3.12
 
-        def profiler(frame, event, arg):
+        def profiler(frame, event, arg) -> None:
             if event == "call":
                 _record(frame.f_code, frame)
 
@@ -72,15 +72,13 @@ def _install():
         threading.setprofile(profiler)
 
 
-def _dump(out):
-    data = [
-        {"file": k[0], "firstlineno": k[1], "name": k[2], **v} for k, v in records.items()
-    ]
+def _dump(out) -> None:
+    data = [{"file": k[0], "firstlineno": k[1], "name": k[2], **v} for k, v in records.items()]
     with open(out, "w", encoding="utf-8") as fh:
         json.dump(data, fh)
 
 
-def main():
+def main() -> None:
     out, script, *args = sys.argv[1:]
     script = os.path.realpath(script)
     sys.argv = [script, *args]

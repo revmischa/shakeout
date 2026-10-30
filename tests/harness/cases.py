@@ -28,7 +28,7 @@ Header keys (all optional except ``description``):
     bundle_exit_code    when equivalent = false
     bundle_stderr_contains  substrings expected in bundle stderr when equivalent = false
     soundness           default true: run the dynamic soundness oracle
-    targets             default ["single", "tree"]
+    targets             default ["single", "tree", "pyz", "minify"]
     min_python          e.g. "3.12"
     xfail               reason string: a documented, known limitation
 """
@@ -47,9 +47,25 @@ else:  # pragma: no cover
 
 CASES_DIR = Path(__file__).resolve().parent.parent / "cases"
 _KNOWN_KEYS = {
-    "description", "entry", "noshake_equivalent", "argv", "options", "removed", "kept", "dropped_modules",
-    "bundled_modules", "warnings", "stdout", "exit_code", "equivalent", "bundle_exit_code",
-    "bundle_stderr_contains", "soundness", "targets", "min_python", "xfail",
+    "description",
+    "entry",
+    "noshake_equivalent",
+    "argv",
+    "options",
+    "removed",
+    "kept",
+    "dropped_modules",
+    "bundled_modules",
+    "warnings",
+    "stdout",
+    "exit_code",
+    "equivalent",
+    "bundle_exit_code",
+    "bundle_stderr_contains",
+    "soundness",
+    "targets",
+    "min_python",
+    "xfail",
 }
 
 
@@ -74,7 +90,7 @@ class Case:
     bundle_exit_code: int | None = None
     bundle_stderr_contains: tuple[str, ...] = ()
     soundness: bool = True
-    targets: tuple[str, ...] = ("single", "tree")
+    targets: tuple[str, ...] = ("single", "tree", "pyz", "minify")
     min_python: tuple[int, int] = (3, 10)
     xfail: str | None = None
 
@@ -97,7 +113,8 @@ def parse_case(path: Path, case_id: str) -> Case:
         if line.startswith("=== "):
             name = line[4:].strip()
             if name in files:
-                raise CaseFormatError(f"{path}: duplicate file {name}")
+                msg = f"{path}: duplicate file {name}"
+                raise CaseFormatError(msg)
             current = files[name] = []
         elif current is None:
             header_lines.append(line)
@@ -106,15 +123,19 @@ def parse_case(path: Path, case_id: str) -> Case:
     try:
         header = tomllib.loads("".join(header_lines))
     except tomllib.TOMLDecodeError as exc:
-        raise CaseFormatError(f"{path}: bad header: {exc}") from exc
+        msg = f"{path}: bad header: {exc}"
+        raise CaseFormatError(msg) from exc
     unknown = set(header) - _KNOWN_KEYS
     if unknown:
-        raise CaseFormatError(f"{path}: unknown header keys {sorted(unknown)}")
+        msg = f"{path}: unknown header keys {sorted(unknown)}"
+        raise CaseFormatError(msg)
     if "description" not in header:
-        raise CaseFormatError(f"{path}: missing description")
+        msg = f"{path}: missing description"
+        raise CaseFormatError(msg)
     entry = header.get("entry", "main.py")
     if entry not in files:
-        raise CaseFormatError(f"{path}: entry {entry} not among files {sorted(files)}")
+        msg = f"{path}: entry {entry} not among files {sorted(files)}"
+        raise CaseFormatError(msg)
     major, minor = (int(x) for x in header.get("min_python", "3.10").split("."))
     return Case(
         id=case_id,
@@ -136,7 +157,7 @@ def parse_case(path: Path, case_id: str) -> Case:
         bundle_exit_code=header.get("bundle_exit_code"),
         bundle_stderr_contains=tuple(header.get("bundle_stderr_contains", ())),
         soundness=header.get("soundness", True),
-        targets=tuple(header.get("targets", ("single", "tree"))),
+        targets=tuple(header.get("targets", ("single", "tree", "pyz", "minify"))),
         min_python=(major, minor),
         xfail=header.get("xfail"),
     )

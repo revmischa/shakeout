@@ -6,7 +6,10 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -16,7 +19,9 @@ class RunResult:
     stderr: str
 
     def describe(self) -> str:
-        return f"exit={self.returncode}\n--- stdout ---\n{self.stdout}\n--- stderr ---\n{self.stderr}"
+        return (
+            f"exit={self.returncode}\n--- stdout ---\n{self.stdout}\n--- stderr ---\n{self.stderr}"
+        )
 
 
 def hermetic_env() -> dict[str, str]:

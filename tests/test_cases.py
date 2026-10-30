@@ -24,7 +24,7 @@ from tests.harness.cases import Case, discover_cases
 from tests.harness.project import write_project
 from tests.harness.run import RunResult, run_python
 from tests.harness.soundness import check_soundness, trace_execution
-from tests.harness.tracebacks import normalize_stderr
+from tests.harness.tracebacks import normalize_stderr, structure
 
 CASES = discover_cases()
 
@@ -136,9 +136,14 @@ def test_equivalence(case: Case, target: str, materialize) -> None:
     m = materialize(case)
     out = m.root / f"out-{target}"
     shake = target != "noshake"
+    overrides: dict[str, Any] = {"shake": shake}
+    if target == "minify":
+        overrides["minify"] = True
     built = build(
-        m.entry, out, target="single" if target == "noshake" else target,
-        options=_options(case, shake=shake),
+        m.entry,
+        out,
+        target="single" if target in ("noshake", "minify") else target,
+        options=_options(case, **overrides),
     )
     bundled = run_python(built.run_path, cwd=m.root / f"cwd-{target}", argv=case.argv)
     if case.equivalent if shake else case.noshake_equivalent:
@@ -148,7 +153,13 @@ def test_equivalence(case: Case, target: str, materialize) -> None:
         got = normalize_stderr(
             bundled.stderr, strip_prefixes=[str(out)], runtime_files=built.runtime_files
         )
-        assert got == want, f"traceback/stderr mismatch\n--- original ---\n{want}\n--- bundle ---\n{got}"
+        if target == "minify":  # displayed source lines lose comments; frames must not change
+            want, got = structure(want), structure(got)
+        if target == "pyz":  # zipimport shows paths inside the archive
+            got = got.replace(f"{built.run_path.name}/", "")
+        assert got == want, (
+            f"traceback/stderr mismatch\n--- original ---\n{want}\n--- bundle ---\n{got}"
+        )
     else:
         if case.bundle_exit_code is not None:
             assert bundled.returncode == case.bundle_exit_code, bundled.describe()
@@ -178,5 +189,7 @@ def test_golden(case: Case, materialize, update_goldens: bool) -> None:
     if update_goldens:
         case.golden_path.write_text(report, encoding="utf-8")
         return
-    assert case.golden_path.exists(), f"missing golden; run pytest --update-goldens and review {case.golden_path}"
+    assert case.golden_path.exists(), (
+        f"missing golden; run pytest --update-goldens and review {case.golden_path}"
+    )
     assert report == case.golden_path.read_text(encoding="utf-8")

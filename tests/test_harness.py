@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -12,6 +12,9 @@ from tests.harness.project import write_project
 from tests.harness.run import run_python
 from tests.harness.soundness import check_soundness, trace_execution
 from tests.harness.tracebacks import frames, normalize_stderr
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -94,7 +97,9 @@ def test_soundness_never_called_function_is_not_flagged(traced) -> None:
 
 
 def test_run_python_is_hermetic(tmp_path: Path) -> None:
-    src = write_project(tmp_path, {"p.py": "import os, sys\nprint(os.environ.get('PYTHONPATH'), sys.flags.no_site)"})
+    src = write_project(
+        tmp_path, {"p.py": "import os, sys\nprint(os.environ.get('PYTHONPATH'), sys.flags.no_site)"}
+    )
     result = run_python(src / "p.py", cwd=tmp_path)
     assert result.stdout == "None 1\n"
 
@@ -154,7 +159,9 @@ def test_case_parser_requires_entry(tmp_path: Path) -> None:
 
 def test_case_parser_reads_files_verbatim(tmp_path: Path) -> None:
     p = tmp_path / "x.case"
-    p.write_text('description = "d"\nremoved = ["lib:f"]\n=== main.py\nimport lib\n\n=== lib.py\ndef f(): pass\n')
+    p.write_text(
+        'description = "d"\nremoved = ["lib:f"]\n=== main.py\nimport lib\n\n=== lib.py\ndef f(): pass\n'
+    )
     case = parse_case(p, "x")
     assert case.files == {"main.py": "import lib\n\n", "lib.py": "def f(): pass\n"}
     assert case.removed == {"lib:f"}
@@ -183,5 +190,6 @@ def test_normalize_handles_exception_group_frames() -> None:
     got = normalize_stderr(
         GROUP_TRACEBACK, strip_prefixes=["/tmp/src", "/tmp/out"], runtime_files=["/tmp/out/app.py"]
     )
-    assert '"/tmp/out/app.py"' not in got and "_shakeout_bootstrap" not in got
+    assert '"/tmp/out/app.py"' not in got
+    assert "_shakeout_bootstrap" not in got
     assert '  |   File "main.py", line 4, in <module>\n  |     run()\n' in got

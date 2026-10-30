@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from .run import RunResult, run_python
+from tests.harness.run import RunResult, run_python
 
 TRACER = Path(__file__).with_name("tracer_main.py")
 

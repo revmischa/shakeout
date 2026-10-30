@@ -12,8 +12,18 @@ from dataclasses import dataclass, field
 
 from hypothesis import strategies as st
 
-KINDS = ("func", "func", "func", "const", "registered", "plugin", "plain_class", "effect",
-         "dynamic", "reexport")
+KINDS = (
+    "func",
+    "func",
+    "func",
+    "const",
+    "registered",
+    "plugin",
+    "plain_class",
+    "effect",
+    "dynamic",
+    "reexport",
+)
 
 
 @dataclass
@@ -50,19 +60,29 @@ def programs(draw: st.DrawFn) -> Program:
     order = [(m, i) for m in range(n_modules) for i in range(len(modules[m]))]
     for pos, (m, i) in enumerate(order):
         item = modules[m][i]
-        later = [(mm, ii) for (mm, ii) in order[pos + 1:] if modules[mm][ii].kind in callable_kinds | {"const"}]
+        later = [
+            (mm, ii)
+            for (mm, ii) in order[pos + 1 :]
+            if modules[mm][ii].kind in callable_kinds | {"const"}
+        ]
         if item.kind in ("func", "registered", "plain_class", "dynamic") and later:
             for target in draw(st.lists(st.sampled_from(later), max_size=3, unique=True)):
                 style = "local" if target[0] == m else draw(st.sampled_from(["attr", "from_local"]))
                 item.calls.append((*target, style))
         if item.kind == "reexport":
-            others = [(mm, ii) for (mm, ii) in order if mm > m and modules[mm][ii].kind in callable_kinds | {"const"}]
+            others = [
+                (mm, ii)
+                for (mm, ii) in order
+                if mm > m and modules[mm][ii].kind in callable_kinds | {"const"}
+            ]
             if others:
                 item.calls.append((*draw(st.sampled_from(others)), "reexport"))
             else:
                 item.kind = "const"
-    candidates = [(m, i) for (m, i) in order if modules[m][i].kind not in ("effect",)]
-    uses = draw(st.lists(st.sampled_from(candidates), max_size=5, unique=True)) if candidates else []
+    candidates = [(m, i) for (m, i) in order if modules[m][i].kind != "effect"]
+    uses = (
+        draw(st.lists(st.sampled_from(candidates), max_size=5, unique=True)) if candidates else []
+    )
     main_uses = [(m, i, draw(st.sampled_from(["attr", "from"]))) for (m, i) in uses]
     return Program(modules, main_uses)
 

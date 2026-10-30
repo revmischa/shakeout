@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import textwrap
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def write_project(root: Path, files: dict[str, str], *, dedent: bool = True) -> Path:

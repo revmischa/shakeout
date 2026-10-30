@@ -6,17 +6,33 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-from .. import __version__
-from ..model import Module
-from ..project import ShakeResult
+from shakeout import __version__
+from shakeout.emit.minify import drop_blank_lines, minify_lines
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from shakeout.model import Module
+    from shakeout.result import ShakeResult
 
 _CODING = re.compile(rb"^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)")
+Chunks = list[tuple[int, str]]
 
 
 @dataclass
 class BuildResult:
+    """A written artifact.
+
+    Attributes:
+        result: The analysis that produced it.
+        out: Output directory.
+        run_path: What to execute or deploy (script, entry file, .pyz or Lambda .zip).
+        runtime_files: Files whose frames belong to shakeout's runtime, not the program.
+        manifest: Build manifest (also embedded in or written next to the artifact).
+    """
+
     result: ShakeResult
     out: Path
     run_path: Path
@@ -24,50 +40,68 @@ class BuildResult:
     manifest: dict[str, object] = field(default_factory=dict[str, object])
 
 
-def module_chunks(
-    result: ShakeResult, mod: Module, kept: set[int] | None = None, *, stub: bool = True
-) -> list[tuple[int, str]]:
-    """Kept statements as (original start line, text) chunks, each ending in a newline.
+class ChunkBuilder:
+    """Turns kept statements into (original start line, text) chunks per module."""
 
-    Each chunk starts right after the previous statement (kept or not) so comments and blank
-    lines that precede a statement travel with it and vanish with it.
-    """
-    lines = mod.lines
-    chunks: list[tuple[int, str]] = []
-    prev_end = 0
-    for st in mod.statements:
-        if (st.index in kept) if kept is not None else st.kept:
-            rw = result.rewrite(st) if kept is None else None
-            if rw is not None:
-                # Same number of lines as the original statement, so later lines don't move.
-                span = st.end - st.start + 1
-                text = "".join(lines[prev_end : st.start - 1]) + rw[0] + "\n" * span
-            else:
-                text = "".join(lines[prev_end : st.end])
-            if text and not text.endswith("\n"):
-                text += "\n"
-            chunks.append((prev_end + 1, text))
-        prev_end = st.end
-    if stub and result.options.tombstones and result.options.shake:
-        text = tombstone_stub(result, mod, prev_end)
-        if text:
-            chunks.append((len(lines) + 2, text))
-    return chunks
+    def __init__(self, result: ShakeResult) -> None:
+        """Prepare to emit modules of ``result``."""
+        self.result = result
+        self.options = result.options
+        self._minified: dict[str, tuple[list[str], frozenset[int]]] = {}
+
+    def lines(self, mod: Module) -> tuple[list[str], frozenset[int]]:
+        """Source lines to emit for ``mod`` (minified if requested) and verbatim rows."""
+        if not (self.options.minify or self.options.strip_docstrings):
+            return mod.lines, frozenset()
+        if mod.name not in self._minified:
+            self._minified[mod.name] = minify_lines(
+                mod.source, strip_docstrings=self.options.strip_docstrings
+            )
+        return self._minified[mod.name]
+
+    def chunks(self, mod: Module, kept: set[int] | None = None, *, stub: bool = True) -> Chunks:
+        """Kept statements of ``mod`` as chunks, each ending in a newline.
+
+        Each chunk starts right after the previous statement (kept or not) so comments and blank
+        lines that precede a statement travel with it and vanish with it. ``kept`` overrides the
+        kept set (used when two module names share one file).
+        """
+        lines, verbatim = self.lines(mod)
+        out: Chunks = []
+        prev_end = 0
+        for st in mod.statements:
+            if (st.index in kept) if kept is not None else st.kept:
+                rw = self.result.rewrite(st) if kept is None else None
+                if rw is not None:  # same line count, so later lines do not move
+                    span = st.end - st.start + 1
+                    text = "".join(lines[prev_end : st.start - 1]) + rw[0] + "\n" * span
+                else:
+                    text = "".join(lines[prev_end : st.end])
+                if text and not text.endswith("\n"):
+                    text += "\n"
+                out.append((prev_end + 1, text))
+            prev_end = st.end
+        if stub and self.options.tombstones and self.options.shake:
+            text = tombstone_stub(self.result, mod)
+            if text:
+                out.append((len(mod.lines) + 2, text))
+        if self.options.minify:
+            out = drop_blank_lines(out, verbatim)
+        return out
 
 
 def tombstones(result: ShakeResult, mod: Module) -> dict[str, tuple[str, int]]:
+    """Names ``mod`` no longer binds, mapped to (file, line) of their definition."""
     out: dict[str, tuple[str, int]] = {}
     if mod.name not in result.loaded:
         return out
     for name, idxs in sorted(mod.binders.items()):
-        if any(result.binds_at_runtime(mod.statements[i], name) for i in idxs):
-            continue
-        first = mod.statements[idxs[0]]
-        out[name] = (mod.filename, first.start)
+        if not any(result.binds_at_runtime(mod.statements[i], name) for i in idxs):
+            out[name] = (mod.filename, mod.statements[idxs[0]].start)
     return out
 
 
-def tombstone_stub(result: ShakeResult, mod: Module, _prev_end: int) -> str:
+def tombstone_stub(result: ShakeResult, mod: Module) -> str:
     """A PEP 562 ``__getattr__`` explaining removed names, unless the module defines one."""
     if mod.is_entry or "__getattr__" in mod.binders:
         return ""
@@ -86,7 +120,8 @@ def tombstone_stub(result: ShakeResult, mod: Module, _prev_end: int) -> str:
     )
 
 
-def build_source(chunks: list[tuple[int, str]]) -> str:
+def build_source(chunks: Chunks) -> str:
+    """Reassemble chunks into source with original line numbers (newline padding)."""
     parts: list[str] = []
     line = 1
     for start, text in chunks:
@@ -98,8 +133,9 @@ def build_source(chunks: list[tuple[int, str]]) -> str:
     return "".join(parts)
 
 
-def manifest(result: ShakeResult, contents: dict[str, str]) -> dict[str, object]:
-    digest = hashlib.sha256()
+def manifest(result: ShakeResult, contents: dict[str, str], target: str) -> dict[str, object]:
+    """Build manifest: identity, modules, removals and what runtime diagnostics need."""
+    digest = hashlib.sha256(target.encode())
     for name in sorted(contents):
         digest.update(name.encode() + b"\0" + contents[name].encode() + b"\0")
     modules: dict[str, object] = {}
@@ -112,27 +148,34 @@ def manifest(result: ShakeResult, contents: dict[str, str]) -> dict[str, object]
             "kept": sum(st.kept for st in mod.statements),
         }
     dynamic = sorted(
-        f"{d.message.split(' at ', 1)[1].split(':', 2)[0]}:{d.line}"
+        f"{result.modules[d.module].filename}:{d.line}"
         for d in result.diagnostics
-        if d.message.startswith("dynamic import at ")
+        if d.message.startswith("dynamic import at ") and d.module in result.modules
     )
-    return {
+    stones = {
+        name: {k: list(v) for k, v in tombstones(result, result.modules[name]).items()}
+        for name in sorted(result.loaded)
+    }
+    data: dict[str, object] = {
         "shakeout": __version__,
         "build_id": digest.hexdigest()[:12],
+        "target": target,
         "entry": result.entry.name,
         "modules": modules,
         "dropped": sorted(result.dropped_modules),
         "dynamic_imports": dynamic,
-        "tombstones": {
-            name: {k: list(v) for k, v in tombstones(result, result.modules[name]).items()}
-            for name in sorted(result.loaded)
-            if tombstones(result, result.modules[name])
-        },
+        "tombstones": {k: v for k, v in stones.items() if v},
         "embed_source": result.options.embed_source,
     }
+    if result.options.exports:
+        data["handlers"] = [
+            f"{result.entry_module}.{e}" for e in result.options.exports if ":" not in e
+        ]
+    return data
 
 
 def write_manifest(path: Path, data: dict[str, object]) -> None:
+    """Write ``data`` as stable, human-readable JSON."""
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 

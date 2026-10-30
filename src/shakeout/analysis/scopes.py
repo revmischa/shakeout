@@ -13,18 +13,26 @@ soundness bug, so every simplification here errs toward reporting more reference
 from __future__ import annotations
 
 import ast
-from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from ..model import DynamicUse, FromTarget, ImportTarget, ModuleTarget, NameTarget, Ref
+from shakeout.model import DynamicUse, FromTarget, ImportTarget, ModuleTarget, NameTarget, Ref
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 _FUNCS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
 # Marker in a scope dict: the name is declared ``global`` here, so lookup must stop and resolve
 # to the module namespace even if an enclosing function has a local of the same name.
 GLOBAL_DECL = ModuleTarget("<global>")
 
-_DYNAMIC_BUILTINS = {"globals": "globals", "vars": "vars", "locals": "locals", "eval": "eval",
-                     "exec": "exec"}
+_DYNAMIC_BUILTINS = {
+    "globals": "globals",
+    "vars": "vars",
+    "locals": "locals",
+    "eval": "eval",
+    "exec": "exec",
+}
 
 
 @dataclass(frozen=True)
@@ -179,9 +187,11 @@ def _walk_no_nested_funcs(node: ast.AST) -> Iterator[ast.AST]:
     while stack:
         cur = stack.pop()
         yield cur
-        for child in ast.iter_child_nodes(cur):
-            if not isinstance(child, (*_FUNCS, ast.ClassDef)):
-                stack.append(child)
+        stack.extend(
+            child
+            for child in ast.iter_child_nodes(cur)
+            if not isinstance(child, (*_FUNCS, ast.ClassDef))
+        )
 
 
 def function_scope(
@@ -192,8 +202,8 @@ def function_scope(
     body: Iterable[ast.AST] = [node.body] if isinstance(node, ast.Lambda) else node.body
     for stmt in body:
         finder.visit(stmt)  # type: ignore[arg-type]
-    scope: dict[str, ImportTarget | None] = {name: None for name in _arg_names(node.args)}
-    scope.update({name: None for name in _type_param_names(node)})
+    scope: dict[str, ImportTarget | None] = dict.fromkeys(_arg_names(node.args))
+    scope.update(dict.fromkeys(_type_param_names(node)))
     for name, target in finder.bound.items():
         if target is not None or name not in scope:
             scope[name] = target
@@ -270,15 +280,22 @@ class RefCollector(ast.NodeVisitor):
         if chain is not None:
             root, attrs = chain
             found, target = self._lookup(root)
-            if (not attrs and not found and root in _DYNAMIC_BUILTINS
-                    and not (root == "vars" and node.args)):
+            if (
+                not attrs
+                and not found
+                and root in _DYNAMIC_BUILTINS
+                and not (root == "vars" and node.args)
+            ):
                 self.out.dynamic.append(DynamicUse(_DYNAMIC_BUILTINS[root], node.lineno))
             is_dunder_import = not attrs and not found and root == "__import__"
-            is_import_module = (attrs == ("import_module",) and (
-                (not found and root == "importlib")
-                or target == ModuleTarget("importlib"))) or (
-                not attrs and root == "import_module" and (
-                    not found or target == FromTarget("importlib", "import_module")))
+            is_import_module = (
+                attrs == ("import_module",)
+                and ((not found and root == "importlib") or target == ModuleTarget("importlib"))
+            ) or (
+                not attrs
+                and root == "import_module"
+                and (not found or target == FromTarget("importlib", "import_module"))
+            )
             if is_dunder_import or is_import_module:
                 self._dynamic_import(node)
         self.generic_visit(node)
@@ -344,7 +361,9 @@ class RefCollector(ast.NodeVisitor):
             self.visit(tp)
         self._visit_all(node.body)  # class scope is not visible to nested functions
 
-    def _visit_comp(self, node: ast.ListComp | ast.SetComp | ast.GeneratorExp | ast.DictComp) -> None:
+    def _visit_comp(
+        self, node: ast.ListComp | ast.SetComp | ast.GeneratorExp | ast.DictComp
+    ) -> None:
         gens = node.generators
         self.visit(gens[0].iter)
         scope: dict[str, ImportTarget | None] = {}

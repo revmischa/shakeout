@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import pkgutil
 import sys
 from dataclasses import dataclass
 from functools import cache
@@ -10,8 +11,20 @@ from importlib.machinery import EXTENSION_SUFFIXES, PathFinder
 from pathlib import Path
 
 # Stdlib modules whose import has visible effects; importing them is never "pure".
-IMPURE_STDLIB = frozenset({"this", "antigravity", "__hello__", "__phello__", "idlelib", "turtle",
-                           "tkinter", "readline", "rlcompleter", "site"})
+IMPURE_STDLIB = frozenset(
+    {
+        "this",
+        "antigravity",
+        "__hello__",
+        "__phello__",
+        "idlelib",
+        "turtle",
+        "tkinter",
+        "readline",
+        "rlcompleter",
+        "site",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -34,7 +47,7 @@ def is_pure_external(name: str) -> bool:
 
 
 class ModuleFinder:
-    def __init__(self, search_path: list[str], roots: list[Path], include: frozenset[str]):
+    def __init__(self, search_path: list[str], roots: list[Path], include: frozenset[str]) -> None:
         self.search_path = [p for p in search_path if p]
         self.roots = [Path(os.path.realpath(r)) for r in roots]
         self.include = include
@@ -63,7 +76,7 @@ class ModuleFinder:
         locations = tuple(spec.submodule_search_locations or ())
         is_package = spec.submodule_search_locations is not None
         if spec.origin is None or spec.origin == "namespace":
-            return Found(name, None, True, locations, "namespace")
+            return Found(name, None, is_package=True, search_locations=locations, kind="namespace")
         origin = Path(spec.origin)
         if origin.suffix == ".py":
             kind = "source"
@@ -77,10 +90,10 @@ class ModuleFinder:
         if found.kind not in ("source", "namespace"):
             return False
         top = found.name.partition(".")[0]
-        if top in self.include:
-            return True
         if is_stdlib(found.name):
-            return False
+            return top in self.include
+        if top in self.include or ("*" in self.include and found.kind == "source"):
+            return True
         paths = [found.origin] if found.origin else [Path(p) for p in found.search_locations]
         for p in paths:
             real = Path(os.path.realpath(p))
@@ -92,8 +105,6 @@ class ModuleFinder:
 
     def submodules(self, found: Found) -> list[str]:
         """All importable submodules (recursively) of a package, sorted."""
-        import pkgutil
-
         if not found.is_package:
             return []
         names: list[str] = []
@@ -110,9 +121,8 @@ class ModuleFinder:
 def display_filename(name: str, found: Found) -> str:
     """Path of the module relative to its import root, e.g. ``pkg/sub/__init__.py``."""
     base = name.replace(".", "/")
-    if found.kind == "namespace":
+    if found.origin is None:  # namespace package
         return base + "/"
-    assert found.origin is not None
     if found.is_package:
         return f"{base}/{found.origin.name}"
     return base + found.origin.suffix

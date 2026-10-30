@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-import ast
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import ast
+    from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -75,7 +78,8 @@ class Statement:
     nodes: list[ast.stmt]
     kind: str
     binds: dict[str, list[ImportTarget | None]] = field(
-        default_factory=dict[str, list[ImportTarget | None]])
+        default_factory=dict[str, list[ImportTarget | None]]
+    )
     refs: list[Ref] = field(default_factory=list[Ref])
     loads: set[str] = field(default_factory=set[str])
     eager_loads: set[str] = field(default_factory=set[str])
@@ -101,6 +105,7 @@ class Module:
     is_package: bool
     source: str
     is_entry: bool = False
+    runs_as_main: bool = False  # the entry run as a script (its __main__ block is live)
     statements: list[Statement] = field(default_factory=list[Statement])
     binders: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
     dynamic: list[DynamicUse] = field(default_factory=list[DynamicUse])
@@ -115,7 +120,7 @@ class Module:
 
 
 def split_lines(source: str) -> list[str]:
-    """Split on newlines only, like the tokenizer (str.splitlines also splits on \\f, \\v...)."""
+    r"""Split on newlines only, like the tokenizer (str.splitlines also splits on \\f, \\v...)."""
     parts = source.split("\n")
     lines = [p + "\n" for p in parts[:-1]]
     if parts[-1]:
