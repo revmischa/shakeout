@@ -1,0 +1,15 @@
+description = "form feeds and other separators do not shift line numbers (str.splitlines would)"
+exit_code = 1
+removed = ["lib:unused"]
+=== main.py
+from lib import fail
+
+fail()
+=== lib.py
+
+def unused():
+    return " "  # separators inside a string
+
+
+def fail():
+    raise ValueError("boom")

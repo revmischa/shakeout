@@ -111,4 +111,13 @@ class Module:
 
     @property
     def lines(self) -> list[str]:
-        return self.source.splitlines(keepends=True)
+        return split_lines(self.source)
+
+
+def split_lines(source: str) -> list[str]:
+    """Split on newlines only, like the tokenizer (str.splitlines also splits on \\f, \\v...)."""
+    parts = source.split("\n")
+    lines = [p + "\n" for p in parts[:-1]]
+    if parts[-1]:
+        lines.append(parts[-1])
+    return lines

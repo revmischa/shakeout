@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import ast
 import symtable
+import sys
 import sysconfig
 import warnings
 from pathlib import Path
@@ -18,7 +19,7 @@ from pathlib import Path
 import pytest
 
 from shakeout.analysis.scopes import ImportContext, collect
-from shakeout.model import NameTarget
+from shakeout.model import NameTarget, split_lines
 
 # Names the compiler synthesizes (PEP 649/695 machinery); never user-visible globals.
 COMPILER_INTERNAL = {"__class__", "__classdict__", "__classdictcell__",
@@ -31,15 +32,38 @@ ALL_FILES = sorted(
 SAMPLE = ALL_FILES[:: max(1, len(ALL_FILES) // 120)]
 
 
+def _comprehension_targets(source: str) -> set[str]:
+    return {
+        n.id
+        for comp in ast.walk(ast.parse(source))
+        if isinstance(comp, ast.comprehension)
+        for n in ast.walk(comp.target)
+        if isinstance(n, ast.Name)
+    }
+
+
 def _symtable_globals(source: str) -> set[str]:
     """Global names read anywhere inside a module consisting of one statement."""
+    # CPython 3.10's SymbolTableFactory memoizes tables by id(); ids get reused across calls and
+    # a later statement can be handed an earlier statement's table. Reset the memo each time.
+    memo = getattr(getattr(symtable, "_newSymbolTable", None), "_SymbolTableFactory__memo", None)
+    if isinstance(memo, dict):
+        memo.clear()
     top = symtable.symtable(source, "<stmt>", "exec")
+    # Before 3.14 symtable has no is_comp_iter(); inlined comprehension variables (3.12+) then
+    # show up in the module table, so exclude comprehension targets there (slightly weaker check).
+    legacy_comp_names = (
+        _comprehension_targets(source)
+        if sys.version_info >= (3, 12) and not hasattr(symtable.Symbol, "is_comp_iter")
+        else set()
+    )
     # Python 3.12+ inlines comprehensions (PEP 709) and reports their iteration variables in
     # the enclosing table; they are comprehension-local, not globals.
     def comp_local(sym: symtable.Symbol) -> bool:
         return bool(getattr(sym, "is_comp_iter", lambda: False)())
 
     names = {s.get_name() for s in top.get_symbols() if s.is_referenced() and not comp_local(s)}
+    names -= legacy_comp_names
     stack = list(top.get_children())
     while stack:
         table = stack.pop()
@@ -65,7 +89,7 @@ def _check_file(path: Path) -> list[str]:
             tree = ast.parse(source)
     except (SyntaxError, UnicodeDecodeError, ValueError):
         return []
-    lines = source.splitlines(keepends=True)
+    lines = split_lines(source)
     problems = []
     prev_end = 0
     for stmt in tree.body:

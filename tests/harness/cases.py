@@ -92,7 +92,8 @@ def parse_case(path: Path, case_id: str) -> Case:
     header_lines: list[str] = []
     files: dict[str, list[str]] = {}
     current: list[str] | None = None
-    for line in text.splitlines(keepends=True):
+    # Split on "\n" only: case sources may contain \f, \v and other str.splitlines separators.
+    for line in (part + "\n" for part in text.split("\n")[:-1]):
         if line.startswith("=== "):
             name = line[4:].strip()
             if name in files:
