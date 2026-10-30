@@ -11,6 +11,7 @@ import sysconfig
 import types
 import warnings
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -21,14 +22,26 @@ STDLIB = Path(sysconfig.get_paths()["stdlib"])
 FILES = sorted(p for p in STDLIB.rglob("*.py") if "site-packages" not in p.parts)
 
 
-def _shape(code: types.CodeType) -> list[object]:
-    out: list[object] = []
+Shape = list[tuple[str, str, int | None]]
+
+
+def _line(ins: dis.Instruction) -> int | None:
+    positions = getattr(ins, "positions", None)  # Python 3.11+
+    return positions.lineno if positions is not None else ins.starts_line
+
+
+def _shape(code: types.CodeType) -> Shape:
+    """Every instruction (nested code objects inlined) as (opname, argument, line)."""
+    out: Shape = []
     for ins in dis.get_instructions(code):
-        arg = ins.argval
+        arg: object = ins.argval
         if isinstance(arg, types.CodeType):
-            out.append((ins.opname, _shape(arg)))
-        else:
-            out.append((ins.opname, repr(arg), ins.positions.lineno if ins.positions else None))
+            out.append((ins.opname, "<code>", _line(ins)))
+            out.extend(_shape(arg))
+            continue
+        if isinstance(arg, frozenset):  # may print in a different order for identical code
+            arg = sorted(map(repr, cast("frozenset[object]", arg)))
+        out.append((ins.opname, repr(arg), _line(ins)))
     return out
 
 
@@ -55,8 +68,12 @@ def _check(path: Path) -> str | None:
     again = _compile(minified, str(path))
     if again is None:
         return f"{path}: minified source does not compile"
-    if _shape(again) != _shape(original):
-        return f"{path}: minified code differs"
+    before, after = _shape(original), _shape(again)
+    for i, (x, y) in enumerate(zip(before, after, strict=False)):
+        if x != y:
+            return f"{path}: instruction {i} differs: {x} != {y}"
+    if len(before) != len(after):
+        return f"{path}: instruction count differs"
     return None
 
 

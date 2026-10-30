@@ -59,6 +59,7 @@ def run_python(
         [sys.executable, *flags, str(script), *argv],
         cwd=cwd,
         env=hermetic_env(),
+        check=False,
         capture_output=True,
         text=True,
         encoding="utf-8",

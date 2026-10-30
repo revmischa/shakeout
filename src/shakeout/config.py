@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 if sys.version_info >= (3, 11):
     import tomllib
 else:  # pragma: no cover - exercised only on 3.10
-    import tomli as tomllib  # pyright: ignore[reportMissingImports]
+    import tomli as tomllib
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -59,7 +59,7 @@ def load_config(pyproject: Path | None) -> dict[str, Any]:
     if pyproject is None:
         return {}
     try:
-        data = cast("dict[str, Any]", tomllib.loads(pyproject.read_text(encoding="utf-8")))
+        data: dict[str, Any] = tomllib.loads(pyproject.read_text(encoding="utf-8"))
     except ValueError as exc:  # tomllib.TOMLDecodeError subclasses ValueError
         msg = f"{pyproject}: {exc}"
         raise ConfigError(msg) from exc

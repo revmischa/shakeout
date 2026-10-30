@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import builtins
+import functools
 import os
 import re
 import sys
@@ -99,7 +100,11 @@ class Project:
     def _add_entry(self) -> None:
         source = _read(self.entry)
         mod = Module(
-            self.entry_name, self.entry, self.entry.name, is_package=False, source=source,
+            self.entry_name,
+            self.entry,
+            self.entry.name,
+            is_package=False,
+            source=source,
             is_entry=True,
         )
         self._register(mod, run_as_main=not self.options.library)
@@ -128,7 +133,9 @@ class Project:
             return
         if not self.finder.bundleable(found):
             self.externals[name] = "stdlib" if is_pure_external(name) else found.kind
-            location = found.origin or (Path(found.search_locations[0]) if found.search_locations else None)
+            location = found.origin or (
+                Path(found.search_locations[0]) if found.search_locations else None
+            )
             if location is not None and not is_stdlib(name):
                 self.external_paths[name] = location
             return
@@ -173,7 +180,7 @@ class Project:
         """Decide for every statement whether it has side effects and must always run."""
         extra = frozenset(self.options.pure_calls)
         for mod in self.modules.values():
-            rules = EffectRules(lambda e, m=mod: self.qualify(m, e), extra)
+            rules = EffectRules(functools.partial(self.qualify, mod), extra)
             for st in mod.statements:
                 _StatementClassifier(mod, st, rules).run()
         ClassEffects(
@@ -256,7 +263,7 @@ class _ModuleAnalyzer:
 
     def __init__(self, mod: Module) -> None:
         self.mod = mod
-        self.ctx = ImportContext(mod.name, mod.is_package)
+        self.ctx = ImportContext(mod.name, is_package=mod.is_package)
 
     def run(self) -> None:
         mod = self.mod

@@ -14,6 +14,7 @@ def _first_line(text: str, width: int = 48) -> str:
 
 
 def render_report(result: ShakeResult) -> str:
+    """Human-readable report of every module and statement (the golden-file format)."""
     out: list[str] = []
     for name in sorted(result.modules, key=lambda n: (n != result.entry_module, n)):
         mod = result.modules[name]

@@ -16,6 +16,7 @@ import ast
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from shakeout._compat import override
 from shakeout.model import DynamicUse, FromTarget, ImportTarget, ModuleTarget, NameTarget, Ref
 
 if TYPE_CHECKING:
@@ -37,8 +38,10 @@ _DYNAMIC_BUILTINS = {
 
 @dataclass(frozen=True)
 class ImportContext:
+    """Where an import statement lives, for resolving relative imports."""
+
     module: str
-    is_package: bool
+    is_package: bool = field(kw_only=True)
 
     def absolute(self, level: int, module: str | None) -> str | None:
         """Resolve a possibly relative module name; None if it escapes the top-level package."""
@@ -55,6 +58,7 @@ class ImportContext:
 
 
 def module_prefixes(name: str) -> list[str]:
+    """``a.b.c`` -> ``['a', 'a.b', 'a.b.c']``."""
     parts = name.split(".")
     return [".".join(parts[: i + 1]) for i in range(len(parts))]
 
@@ -125,18 +129,22 @@ class _LocalsFinder(ast.NodeVisitor):
         if target is not None or name not in self.bound:
             self.bound[name] = target
 
+    @override
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, (ast.Store, ast.Del)):
             self._bind(node.id)
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         self._bind(node.name)  # decorators/defaults contain no bindings worth tracking
 
     visit_AsyncFunctionDef = visit_FunctionDef
 
+    @override
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._bind(node.name)
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> None:
         pass
 
@@ -148,6 +156,7 @@ class _LocalsFinder(ast.NodeVisitor):
 
     visit_ListComp = visit_SetComp = visit_GeneratorExp = visit_DictComp = _visit_comp
 
+    @override
     def visit_Import(self, node: ast.Import | ast.ImportFrom) -> None:
         pairs, _, _ = import_bindings(node, self.ctx)
         for name, target in pairs:
@@ -155,27 +164,33 @@ class _LocalsFinder(ast.NodeVisitor):
 
     visit_ImportFrom = visit_Import
 
+    @override
     def visit_Global(self, node: ast.Global) -> None:
         self.globals.update(node.names)
 
+    @override
     def visit_Nonlocal(self, node: ast.Nonlocal) -> None:
         for name in node.names:
             self._bind(name)
 
+    @override
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         if node.name:
             self._bind(node.name)
         self.generic_visit(node)
 
+    @override
     def visit_MatchAs(self, node: ast.MatchAs) -> None:
         if node.name:
             self._bind(node.name)
         self.generic_visit(node)
 
+    @override
     def visit_MatchStar(self, node: ast.MatchStar) -> None:
         if node.name:
             self._bind(node.name)
 
+    @override
     def visit_MatchMapping(self, node: ast.MatchMapping) -> None:
         if node.rest:
             self._bind(node.rest)
@@ -201,7 +216,7 @@ def function_scope(
     finder = _LocalsFinder(ctx)
     body: Iterable[ast.AST] = [node.body] if isinstance(node, ast.Lambda) else node.body
     for stmt in body:
-        finder.visit(stmt)  # type: ignore[arg-type]
+        finder.visit(stmt)
     scope: dict[str, ImportTarget | None] = dict.fromkeys(_arg_names(node.args))
     scope.update(dict.fromkeys(_type_param_names(node)))
     for name, target in finder.bound.items():
@@ -214,6 +229,8 @@ def function_scope(
 
 @dataclass
 class Collected:
+    """References, imports and dynamic constructs found in one top-level statement."""
+
     refs: list[Ref] = field(default_factory=list[Ref])
     loads: set[str] = field(default_factory=set[str])
     eager_loads: set[str] = field(default_factory=set[str])
@@ -258,10 +275,12 @@ class RefCollector(ast.NodeVisitor):
                 self.visit(n)
 
     # -- names -----------------------------------------------------------------------------
+    @override
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, ast.Load):
             self._ref(node.id, (), node.lineno)
 
+    @override
     def visit_Attribute(self, node: ast.Attribute) -> None:
         chain = attribute_chain(node)
         if chain is None:
@@ -274,6 +293,7 @@ class RefCollector(ast.NodeVisitor):
         self._ref(root, attrs, node.lineno)
 
     # -- calls with dynamic semantics ------------------------------------------------------
+    @override
     def visit_Call(self, node: ast.Call) -> None:
         func = node.func
         chain = attribute_chain(func)
@@ -353,6 +373,7 @@ class RefCollector(ast.NodeVisitor):
 
     visit_FunctionDef = visit_AsyncFunctionDef = visit_Lambda = _visit_function
 
+    @override
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._visit_all(node.decorator_list)
         self._visit_all(node.bases)
@@ -385,10 +406,12 @@ class RefCollector(ast.NodeVisitor):
 
     visit_ListComp = visit_SetComp = visit_GeneratorExp = visit_DictComp = _visit_comp
 
+    @override
     def visit_NamedExpr(self, node: ast.NamedExpr) -> None:
         self.visit(node.value)
 
     # -- imports ---------------------------------------------------------------------------
+    @override
     def visit_Import(self, node: ast.Import | ast.ImportFrom) -> None:
         _, loads, star = import_bindings(node, self.ctx)
         self.out.loads.update(loads)
@@ -419,10 +442,12 @@ class _BindFinder(ast.NodeVisitor):
         if target not in targets:
             targets.append(target)
 
+    @override
     def visit_Name(self, node: ast.Name) -> None:
         if isinstance(node.ctx, (ast.Store, ast.Del)):
             self._bind(node.id)
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         self._bind(node.name)
         for sub in ast.walk(node):
@@ -432,6 +457,7 @@ class _BindFinder(ast.NodeVisitor):
 
     visit_AsyncFunctionDef = visit_FunctionDef
 
+    @override
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._bind(node.name)
         for sub in ast.walk(node):
@@ -439,9 +465,11 @@ class _BindFinder(ast.NodeVisitor):
                 for name in sub.names:
                     self._bind(name)
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> None:
         pass
 
+    @override
     def visit_Import(self, node: ast.Import | ast.ImportFrom) -> None:
         pairs, _, _ = import_bindings(node, self.ctx)
         for name, target in pairs:
@@ -449,20 +477,24 @@ class _BindFinder(ast.NodeVisitor):
 
     visit_ImportFrom = visit_Import
 
+    @override
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         if node.name:
             self._bind(node.name)
         self.generic_visit(node)
 
+    @override
     def visit_MatchAs(self, node: ast.MatchAs) -> None:
         if node.name:
             self._bind(node.name)
         self.generic_visit(node)
 
+    @override
     def visit_MatchStar(self, node: ast.MatchStar) -> None:
         if node.name:
             self._bind(node.name)
 
+    @override
     def visit_MatchMapping(self, node: ast.MatchMapping) -> None:
         if node.rest:
             self._bind(node.rest)
@@ -470,12 +502,14 @@ class _BindFinder(ast.NodeVisitor):
 
 
 def module_bindings(node: ast.stmt, ctx: ImportContext) -> dict[str, list[ImportTarget | None]]:
+    """Module-level names bound by the top-level statement ``node``."""
     finder = _BindFinder(ctx)
     finder.visit(node)
     return finder.binds
 
 
 def collect(node: ast.stmt, ctx: ImportContext) -> Collected:
+    """Scope-correct references, imports and dynamic uses in ``node``."""
     collector = RefCollector(ctx)
     collector.visit(node)
     return collector.out

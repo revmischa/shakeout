@@ -1,4 +1,4 @@
-"""Self-hosting: shakeout bundles itself, and the bundled shakeout produces byte-identical bundles."""
+"""Self-hosting: shakeout bundles itself, and the bundled tool makes byte-identical bundles."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def test_bundled_shakeout_reproduces_its_own_output(tmp_path: Path, tool_target:
     tool_src = write_project(
         root / "tool",
         {
-            "shakeout_main.py": "import sys\nfrom shakeout.cli import main\nraise SystemExit(main())\n",
+            "shakeout_main.py": "from shakeout.cli import main\n\nraise SystemExit(main())\n",
         },
     )
     tool = build(

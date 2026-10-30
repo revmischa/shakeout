@@ -9,7 +9,7 @@ the original source tree, and explains names that shakeout removed.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from shakeout.model import split_lines
 
@@ -18,7 +18,10 @@ if TYPE_CHECKING:
 
 _FRAME = re.compile(r'^(?P<lead>[ |]*)File "(?P<file>[^"]+)", line (?P<line>\d+)')
 _NAME_ERROR = re.compile(r"^NameError: name '(?P<name>[^']+)' is not defined")
-_IMPORT_NAME = re.compile(r"^ImportError: cannot import name '(?P<name>[^']+)' from '(?P<mod>[^']+)'")
+_FILE_AND_LINE = 2
+_IMPORT_NAME = re.compile(
+    r"^ImportError: cannot import name '(?P<name>[^']+)' from '(?P<mod>[^']+)'"
+)
 
 
 def symbolicate(traceback: str, manifest: dict[str, object], root: Path) -> str:
@@ -73,17 +76,17 @@ def _notes(lines: list[str], manifest: dict[str, object]) -> list[str]:
     if not isinstance(stones, dict) or not lines:
         return []
     last = lines[-1]
-    notes: list[str] = []
     name_error = _NAME_ERROR.match(last)
     import_error = _IMPORT_NAME.match(last)
-    for module, names in stones.items():  # pyright: ignore[reportUnknownVariableType]
-        if not isinstance(names, dict):
-            continue
-        for name, where in names.items():  # pyright: ignore[reportUnknownVariableType]
-            hit = (name_error and name_error.group("name") == name) or (
-                import_error and import_error.group("name") == name and import_error.group("mod") == module
+    notes: list[str] = []
+    for module, names in cast("dict[str, dict[str, list[object]]]", stones).items():
+        for name, where in names.items():
+            hit = bool(name_error and name_error.group("name") == name) or bool(
+                import_error
+                and import_error.group("name") == name
+                and import_error.group("mod") == module
             )
-            if hit and isinstance(where, list) and len(where) == 2:  # noqa: PLR2004 - (file, line)
+            if hit and len(where) == _FILE_AND_LINE:
                 notes.append(
                     f"shakeout: {name!r} was removed from {where[0]}:{where[1]}; "
                     f"keep it with: keep = ['{module}:{name}']"

@@ -6,7 +6,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from shakeout import __version__
 from shakeout.api import TARGETS, ArchiveError, BuildError, Options, analyze, build, render_report
@@ -21,22 +21,60 @@ def _common() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("entry", nargs="?", help="entry script (default: [tool.shakeout] entry)")
     add = common.add_argument
-    add("--keep", action="append", default=[], metavar="MOD[:NAME]",
-        help="always keep a module or symbol (repeatable)")
-    add("--include", action="append", default=[], metavar="PKG",
-        help="bundle and shake this third-party package; '*' for all (repeatable)")
-    add("--export", action="append", default=[], metavar="NAME",
-        help="entry function called from outside, e.g. a Lambda handler (repeatable)")
-    add("--pure-call", action="append", default=[], metavar="QUALNAME",
-        help="treat calls to this function as side-effect free (repeatable)")
-    add("--assume-pure-bases", action="store_true", default=None,
-        help="assume unknown base classes do not register subclasses")
-    add("--root", action="append", default=[], metavar="DIR",
-        help="extra first-party source root (repeatable)")
-    add("--search-path", action="append", default=[], metavar="DIR",
-        help="extra directory with third-party packages (repeatable)")
-    add("--uv", action="store_true", default=None,
-        help="install the locked dependencies (uv.lock) for the target and use them")
+    add(
+        "--keep",
+        action="append",
+        default=[],
+        metavar="MOD[:NAME]",
+        help="always keep a module or symbol (repeatable)",
+    )
+    add(
+        "--include",
+        action="append",
+        default=[],
+        metavar="PKG",
+        help="bundle and shake this third-party package; '*' for all (repeatable)",
+    )
+    add(
+        "--export",
+        action="append",
+        default=[],
+        metavar="NAME",
+        help="entry function called from outside, e.g. a Lambda handler (repeatable)",
+    )
+    add(
+        "--pure-call",
+        action="append",
+        default=[],
+        metavar="QUALNAME",
+        help="treat calls to this function as side-effect free (repeatable)",
+    )
+    add(
+        "--assume-pure-bases",
+        action="store_true",
+        default=None,
+        help="assume unknown base classes do not register subclasses",
+    )
+    add(
+        "--root",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="extra first-party source root (repeatable)",
+    )
+    add(
+        "--search-path",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="extra directory with third-party packages (repeatable)",
+    )
+    add(
+        "--uv",
+        action="store_true",
+        default=None,
+        help="install the locked dependencies (uv.lock) for the target and use them",
+    )
     add("--python-version", metavar="X.Y", help="target Python for --uv (default: current)")
     add("--platform", metavar="TRIPLE", help="target platform for --uv, e.g. x86_64-manylinux_2_28")
     add("--no-shake", action="store_true", help="bundle without removing code")
@@ -46,22 +84,41 @@ def _common() -> argparse.ArgumentParser:
 
 def _parser() -> argparse.ArgumentParser:
     common = _common()
-    parser = argparse.ArgumentParser(prog="shakeout", description="Tree-shaking bundler for Python.")
+    parser = argparse.ArgumentParser(
+        prog="shakeout", description="Tree-shaking bundler for Python."
+    )
     parser.add_argument("--version", action="version", version=f"shakeout {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     b = sub.add_parser("build", parents=[common], help="write a bundle")
     b.add_argument("-o", "--out", type=Path, help="output directory (default: dist/)")
     b.add_argument("-t", "--target", choices=TARGETS, help="artifact type (default: single)")
-    b.add_argument("--minify", action="store_true", default=None,
-                   help="drop comments and blank lines (line numbers stay exact)")
-    b.add_argument("--strip-docstrings", action="store_true", default=None,
-                   help="also drop docstrings, like python -OO")
-    b.add_argument("--no-embed-source", action="store_true",
-                   help="do not ship sources for traceback lines (see 'shakeout trace')")
-    b.add_argument("--no-tombstones", action="store_true",
-                   help="do not explain removed names when they are accessed at runtime")
-    b.add_argument("--no-copy-dependencies", action="store_true",
-                   help="tree/pyz/lambda: do not ship third-party packages that are not shaken")
+    b.add_argument(
+        "--minify",
+        action="store_true",
+        default=None,
+        help="drop comments and blank lines (line numbers stay exact)",
+    )
+    b.add_argument(
+        "--strip-docstrings",
+        action="store_true",
+        default=None,
+        help="also drop docstrings, like python -OO",
+    )
+    b.add_argument(
+        "--no-embed-source",
+        action="store_true",
+        help="do not ship sources for traceback lines (see 'shakeout trace')",
+    )
+    b.add_argument(
+        "--no-tombstones",
+        action="store_true",
+        help="do not explain removed names when they are accessed at runtime",
+    )
+    b.add_argument(
+        "--no-copy-dependencies",
+        action="store_true",
+        help="tree/pyz/lambda: do not ship third-party packages that are not shaken",
+    )
     r = sub.add_parser("report", parents=[common], help="show what is kept and why")
     r.add_argument("--json", action="store_true", help="machine-readable output")
     w = sub.add_parser("why", parents=[common], help="explain why a symbol is kept")
@@ -81,11 +138,16 @@ def _options(args: argparse.Namespace, config: dict[str, Any]) -> Options:
     search = [*config.get("search-path", ()), *args.search_path]
     if _flag(args.uv, config, "uv", default=False):
         project = Path(config.get("_project", Path(args.entry or ".").resolve().parent))
-        search.insert(0, str(stage(
-            project,
-            python_version=args.python_version or config.get("python-version"),
-            platform=args.platform or config.get("platform"),
-        )))
+        search.insert(
+            0,
+            str(
+                stage(
+                    project,
+                    python_version=args.python_version or config.get("python-version"),
+                    platform=args.platform or config.get("platform"),
+                )
+            ),
+        )
     return Options(
         keep=(*config.get("keep", ()), *args.keep),
         include=(*config.get("include", ()), *args.include),
@@ -99,8 +161,9 @@ def _options(args: argparse.Namespace, config: dict[str, Any]) -> Options:
         embed_source=not getattr(args, "no_embed_source", False)
         and config.get("embed-source", True),
         minify=_flag(getattr(args, "minify", None), config, "minify", default=False),
-        strip_docstrings=_flag(getattr(args, "strip_docstrings", None), config,
-                               "strip-docstrings", default=False),
+        strip_docstrings=_flag(
+            getattr(args, "strip_docstrings", None), config, "strip-docstrings", default=False
+        ),
         copy_dependencies=not getattr(args, "no_copy_dependencies", False)
         and config.get("copy-dependencies", True),
     )
@@ -132,7 +195,8 @@ def _cmd_build(args: argparse.Namespace, config: dict[str, Any]) -> int:
         f"{len(res.loaded)} modules, {kept}/{len(res.statements)} top-level statements kept, "
         f"{len(res.dropped_modules)} modules dropped"
     )
-    for handler in built.manifest.get("handlers", ()):  # type: ignore[union-attr]
+    handlers = built.manifest.get("handlers", [])
+    for handler in cast("list[str]", handlers):
         print(f"handler: {handler}")
     return 0
 

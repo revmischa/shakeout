@@ -6,10 +6,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.unit.helpers import lib_statements
+from tests.unit.helpers import lib_statements, shake
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from shakeout.model import Statement
 
 PURE = [
     ("plain def", "def f(x=1):\n    print(x)\n"),
@@ -25,11 +27,19 @@ PURE = [
     ("staticmethod builtins", "@staticmethod\ndef f(): pass\n"),
     (
         "dataclass with field",
-        "from dataclasses import dataclass, field\n@dataclass(frozen=True)\nclass C:\n    x: list = field(default_factory=list)\n",
+        (
+            "from dataclasses import dataclass, field\n"
+            "@dataclass(frozen=True)\n"
+            "class C:\n"
+            "    x: list = field(default_factory=list)\n"
+        ),
     ),
     (
         "class with plain body",
-        "class C:\n    '''doc'''\n    X = 1\n    y: int\n    def m(self): pass\n    class Inner: pass\n",
+        (
+            "class C:\n    '''doc'''\n    X = 1\n    y: int\n"
+            "    def m(self): pass\n    class Inner: pass\n"
+        ),
     ),
     ("Exception subclass", "class E(Exception):\n    pass\n"),
     ("Enum subclass", "import enum\nclass Color(enum.Enum):\n    RED = 1\n"),
@@ -101,7 +111,7 @@ IMPURE = [
 ]
 
 
-def _last(stmts):
+def _last(stmts: list[Statement]) -> Statement:
     return stmts[-1]
 
 
@@ -142,8 +152,6 @@ def test_main_guard_is_dead_outside_entry(tmp_path: Path) -> None:
 
 
 def test_effects_propagate_through_imports(tmp_path: Path) -> None:
-    from tests.unit.helpers import shake
-
     result = shake(
         tmp_path,
         {
@@ -159,8 +167,6 @@ def test_effects_propagate_through_imports(tmp_path: Path) -> None:
 
 
 def test_cyclic_pure_modules_are_pure(tmp_path: Path) -> None:
-    from tests.unit.helpers import shake
-
     result = shake(
         tmp_path,
         {

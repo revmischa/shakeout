@@ -6,6 +6,7 @@ import ast
 from collections import deque
 from dataclasses import dataclass, field
 
+from shakeout._compat import override
 from shakeout.model import FromTarget, Module, ModuleTarget, NameTarget, Ref, Statement, Target
 
 StmtKey = tuple[str, int]
@@ -16,6 +17,8 @@ _WHOLE_MODULE_ATTRS = frozenset({"__dict__"})
 
 @dataclass
 class Resolution:
+    """Where a reference leads: binders passed through, defining binders, escaping modules."""
+
     traversed: set[StmtKey] = field(
         default_factory=set[StmtKey]
     )  # binders passed through (incl. imports)
@@ -28,6 +31,7 @@ class Resolution:
     )  # (module, stmt, bound name)
 
     def merge(self, other: Resolution) -> None:
+        """Add everything from ``other`` to this resolution."""
         self.traversed |= other.traversed
         self.terminal |= other.terminal
         self.whole |= other.whole
@@ -43,6 +47,7 @@ class Resolver:
         self._active: set[tuple[str, str, tuple[str, ...]]] = set()
 
     def resolve(self, module: str, base: Target, attrs: tuple[str, ...]) -> Resolution:
+        """Follow ``base.attrs`` from ``module`` to the statements that bind it."""
         if isinstance(base, NameTarget):
             return self._name(module, base.name, attrs)
         if isinstance(base, ModuleTarget):
@@ -50,6 +55,7 @@ class Resolver:
         return self._name(base.module, base.attr, attrs)
 
     def resolve_ref(self, module: str, ref: Ref) -> Resolution:
+        """Resolve a collected reference made in ``module``."""
         return self.resolve(module, ref.base, ref.attrs)
 
     def _in_module(self, module: str, attrs: tuple[str, ...]) -> Resolution:
@@ -92,12 +98,15 @@ class Reason:
     detail: str
     parent: StmtKey | None = None
 
+    @override
     def __str__(self) -> str:
         return f"{self.kind}: {self.detail}"
 
 
 @dataclass
 class ShakeState:
+    """Mutable reachability state: live statements, loaded modules, reasons, used names."""
+
     live: set[StmtKey] = field(default_factory=set[StmtKey])
     loaded: set[str] = field(default_factory=set[str])
     whole: set[str] = field(default_factory=set[str])
@@ -108,6 +117,8 @@ class ShakeState:
 
 
 class Shaker:
+    """Worklist reachability from roots over the cross-module reference graph."""
+
     def __init__(self, modules: dict[str, Module], resolver: Resolver) -> None:
         self.modules = modules
         self.resolver = resolver
@@ -115,9 +126,11 @@ class Shaker:
         self._queue: deque[StmtKey] = deque()
 
     def stmt(self, key: StmtKey) -> Statement:
+        """The statement for ``key``."""
         return self.modules[key[0]].statements[key[1]]
 
     def load(self, module: str) -> None:
+        """Mark ``module`` (and its parent packages) as imported; its roots become live."""
         mod = self.modules.get(module)
         if mod is None or module in self.state.loaded:
             return
@@ -132,6 +145,7 @@ class Shaker:
             self.make_whole(module, mod.whole_reason)
 
     def make_whole(self, module: str, why: str) -> None:
+        """Keep every statement of ``module`` (it escapes analysis, e.g. used as a value)."""
         if module not in self.modules:
             return
         self.load(module)
@@ -145,6 +159,7 @@ class Shaker:
                 self._use_name(key, name)
 
     def mark(self, key: StmtKey, reason: Reason) -> None:
+        """Make ``key`` live for ``reason`` (dead statements never become live)."""
         if key in self.state.live or self.stmt(key).dead:
             return
         self.state.live.add(key)
@@ -163,6 +178,7 @@ class Shaker:
             self.make_whole(mod, why)
 
     def run(self) -> ShakeState:
+        """Process the worklist until nothing new becomes live; return the final state."""
         while self._queue:
             key = self._queue.popleft()
             st = self.stmt(key)

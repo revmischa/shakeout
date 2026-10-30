@@ -31,7 +31,7 @@ class ShakeResult:
     reasons: dict[StmtKey, Reason]
     diagnostics: list[Diagnostic]
     externals: dict[str, str] = field(default_factory=dict[str, str])
-    external_paths: dict[str, Path] = field(default_factory=dict[str, "Path"])  # pyright: ignore[reportUnknownArgumentType]
+    external_paths: dict[str, Path] = field(default_factory=dict[str, "Path"])
     whole: set[str] = field(default_factory=set[str])
     used: dict[StmtKey, set[str]] = field(default_factory=dict[StmtKey, set[str]])
     _rewrites: dict[StmtKey, Rewrite | None] = field(default_factory=dict[StmtKey, Rewrite | None])
@@ -139,7 +139,7 @@ class ShakeResult:
 
     def _rewrite_from(self, st: Statement, node: ast.ImportFrom, used: set[str]) -> Rewrite | None:
         mod = self.modules[st.module]
-        base = ImportContext(mod.name, mod.is_package).absolute(node.level, node.module)
+        base = ImportContext(mod.name, is_package=mod.is_package).absolute(node.level, node.module)
         if base is None or base not in self.modules:
             return None
         keep: list[ast.alias] = []

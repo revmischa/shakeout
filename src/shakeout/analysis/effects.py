@@ -205,6 +205,7 @@ class EffectRules:
 
     # -- expressions -------------------------------------------------------------------------
     def pure_callable(self, func: ast.expr) -> bool:
+        """Whether calling ``func`` is known to have no side effects."""
         q = self.qualify(func)
         return q is not None and q in self.pure_callables
 
@@ -223,12 +224,14 @@ class EffectRules:
         return children is not None and all(self.pure_expr(c) for c in children(node))
 
     def pure_decorator(self, node: ast.expr) -> bool:
+        """Whether applying the decorator ``node`` has no side effects."""
         if isinstance(node, ast.Call):
             return self.pure_expr(node)
         return self.pure_callable(node)
 
     # -- statements --------------------------------------------------------------------------
     def function_effect(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None:
+        """Why defining the function has side effects (decorators, defaults), or None."""
         for deco in node.decorator_list:
             if not self.pure_decorator(deco):
                 return f"decorator {ast.unparse(deco)!r} may have side effects"
@@ -254,6 +257,7 @@ class EffectRules:
         return None
 
     def class_body_effect(self, stmt: ast.stmt) -> str | None:
+        """Why executing ``stmt`` inside a class body has side effects, or None."""
         match stmt:
             case ast.FunctionDef() | ast.AsyncFunctionDef():
                 return self.function_effect(stmt)
@@ -277,6 +281,8 @@ class EffectRules:
                 return f"class body contains {type(stmt).__name__}"
 
     def assignment_effect(self, stmt: ast.Assign | ast.AnnAssign) -> str | None:
+        """Why a module-level assignment has side effects, or None."""
+        value: ast.expr | None
         if isinstance(stmt, ast.Assign):
             targets: list[ast.expr] = list(stmt.targets)
             value = stmt.value
@@ -304,6 +310,7 @@ def _short(node: ast.expr | None) -> str:
 
 
 def is_main_guard(node: ast.stmt) -> bool:
+    """Whether ``node`` is ``if __name__ == '__main__':``."""
     if not isinstance(node, ast.If):
         return False
     test = node.test
@@ -316,6 +323,7 @@ def is_main_guard(node: ast.stmt) -> bool:
 
 
 def is_type_checking_guard(node: ast.stmt, qualify: Callable[[ast.expr], str | None]) -> bool:
+    """Whether ``node`` is ``if TYPE_CHECKING:`` without an ``else``."""
     if not isinstance(node, ast.If) or node.orelse:
         return False
     q = qualify(node.test)

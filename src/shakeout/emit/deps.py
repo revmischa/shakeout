@@ -29,7 +29,7 @@ def needed_externals(result: ShakeResult) -> set[str]:
     return needed
 
 
-def _site_of(top: str, location: Path) -> Path:
+def _site_of(location: Path) -> Path:
     """Directory that contains the top-level module or package ``top``."""
     if location.name.startswith("__init__.") or location.is_dir():
         return location.parent.parent if location.is_file() else location.parent
@@ -40,9 +40,17 @@ def _owner(top: str, site: Path) -> Distribution | None:
     for dist in distributions(path=[str(site)]):
         names = (dist.read_text("top_level.txt") or "").split()
         files = dist.files or []
-        if top in names or any(f.parts[0] in (top, f"{top}.py") or f.parts[0].startswith(f"{top}.") for f in files):
+        if top in names or any(
+            f.parts[0] in (top, f"{top}.py") or f.parts[0].startswith(f"{top}.") for f in files
+        ):
             return dist
     return None
+
+
+def _installed(result: ShakeResult, name: str) -> bool:
+    """Whether bundled top-level module ``name`` comes from an installed distribution."""
+    origin = result.modules[name].origin
+    return origin is not None and bool({"site-packages", "dist-packages"} & set(origin.parts))
 
 
 def _copy_file(src: Path, dest: Path) -> None:
@@ -55,13 +63,12 @@ def copy_dependencies(result: ShakeResult, out: Path) -> list[str]:
     shipped: list[str] = []
     seen: set[str] = set()
     tops = {(t, True) for t in needed_externals(result)}
-    tops |= {(n, False) for n in result.loaded if "." not in n and result.modules[n].origin
-             and "site-packages" in result.modules[n].origin.parts}  # type: ignore[union-attr]
+    tops |= {(n, False) for n in result.loaded if "." not in n and _installed(result, n)}
     for top, whole in sorted(tops):
         location = result.external_paths.get(top) or result.modules[top].origin
         if location is None:
             continue
-        site = _site_of(top, location)
+        site = _site_of(location)
         dist = _owner(top, site)
         if dist is None:
             if whole:
@@ -84,7 +91,8 @@ def copy_dependencies(result: ShakeResult, out: Path) -> list[str]:
 
 def _copy_tree_or_file(src: Path, out: Path) -> None:
     if src.is_dir():
-        shutil.copytree(src, out / src.name, ignore=shutil.ignore_patterns("__pycache__"),
-                        dirs_exist_ok=True)
+        shutil.copytree(
+            src, out / src.name, ignore=shutil.ignore_patterns("__pycache__"), dirs_exist_ok=True
+        )
     else:
         _copy_file(src, out / src.name)

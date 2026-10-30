@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from shakeout.emit import BuildResult
 from shakeout.emit.archive import ArchiveError, write_lambda, write_pyz
 from shakeout.emit.single import write_single
 from shakeout.emit.tree import write_tree
@@ -16,8 +17,6 @@ from shakeout.result import ShakeResult
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from shakeout.emit import BuildResult
 
 __all__ = [
     "TARGETS",

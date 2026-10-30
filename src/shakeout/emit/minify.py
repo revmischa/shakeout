@@ -65,7 +65,9 @@ def _docstrings(source: str, lines: list[str]) -> list[tuple[int, int, int, bool
     tree = ast.parse(source)
     owners: list[ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef] = [tree]
     owners.extend(
-        n for n in ast.walk(tree) if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
     )
     for owner in owners:
         body = owner.body

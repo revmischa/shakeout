@@ -73,7 +73,9 @@ PROJECT = {
     "main.py": "from pkg import api\nimport plugins\nprint(api.run())\n",
     "pkg/__init__.py": "from .core import run as _r\n",
     "pkg/api.py": "from .core import run\nfrom .util import unused\n",
-    "pkg/core.py": "def run():\n    return helper()\n\ndef helper():\n    return 1\n\ndef dead():\n    pass\n",
+    "pkg/core.py": (
+        "def run():\n    return helper()\n\ndef helper():\n    return 1\n\ndef dead():\n    pass\n"
+    ),
     "pkg/util.py": "def unused():\n    pass\n",
     "plugins.py": "REG = []\ndef reg(f):\n    REG.append(f)\n    return f\n@reg\ndef p(): pass\n",
 }
@@ -81,7 +83,7 @@ PROJECT = {
 
 def test_build_is_deterministic(tmp_path: Path) -> None:
     src = write_project(tmp_path / "src", PROJECT)
-    digests = set()
+    digests: set[tuple[str, str]] = set()
     for i in range(3):
         for target in ("single", "tree"):
             out = tmp_path / f"out-{target}-{i}"
@@ -107,8 +109,8 @@ def test_shaking_is_idempotent(tmp_path: Path) -> None:
         for p in (tmp_path / "t2").rglob("*.py")
     }
     assert a.keys() == b.keys()
-    for name in a:
-        assert a[name].rstrip("\n") == b[name].rstrip("\n") or "__getattr__" in a[name], name
+    for name, text in a.items():
+        assert text.rstrip("\n") == b[name].rstrip("\n") or "__getattr__" in text, name
 
 
 @settings(

@@ -13,11 +13,11 @@ from shakeout.model import FromTarget, ModuleTarget, NameTarget
 
 def refs(source: str) -> set[str]:
     stmt = ast.parse(textwrap.dedent(source)).body[0]
-    out = collect(stmt, ImportContext("pkg.mod", False))
+    out = collect(stmt, ImportContext("pkg.mod", is_package=False))
     return {r.base.name for r in out.refs if isinstance(r.base, NameTarget)}
 
 
-CASES = [
+CASES: list[tuple[str, str, set[str]]] = [
     ("param shadows", "def f(x): return x", set()),
     ("local shadows", "def f():\n    y = 1\n    return y", set()),
     ("read before local assignment is still local", "def f():\n    print(y)\n    y = 1", {"print"}),
@@ -75,14 +75,14 @@ def test_global_refs(label: str, source: str, expected: set[str]) -> None:
 
 def test_local_import_resolves_to_target() -> None:
     stmt = ast.parse("def f():\n    from .sib import helper\n    return helper()").body[0]
-    out = collect(stmt, ImportContext("pkg.mod", False))
+    out = collect(stmt, ImportContext("pkg.mod", is_package=False))
     assert [(r.base, r.attrs) for r in out.refs] == [(FromTarget("pkg.sib", "helper"), ())]
     assert out.eager_loads == set()
     assert "pkg.sib" in out.loads
 
 
 def test_import_bindings_and_relative_resolution() -> None:
-    ctx = ImportContext("pkg.sub.mod", False)
+    ctx = ImportContext("pkg.sub.mod", is_package=False)
     stmt = ast.parse("from ..top import a as b").body[0]
     assert module_bindings(stmt, ctx) == {"b": [FromTarget("pkg.top", "a")]}
     stmt = ast.parse("import x.y.z").body[0]
@@ -92,10 +92,10 @@ def test_import_bindings_and_relative_resolution() -> None:
 
 
 def test_package_relative_import_uses_package_itself() -> None:
-    ctx = ImportContext("pkg", True)
+    ctx = ImportContext("pkg", is_package=True)
     assert ctx.absolute(1, "mod") == "pkg.mod"
     assert ctx.absolute(2, "mod") is None
-    assert ImportContext("__main__", False).absolute(1, "x") is None
+    assert ImportContext("__main__", is_package=False).absolute(1, "x") is None
 
 
 @pytest.mark.parametrize(
@@ -113,16 +113,18 @@ def test_package_relative_import_uses_package_itself() -> None:
 )
 def test_dynamic_uses_detected(source: str, kind: str) -> None:
     tree = ast.parse(source)
-    kinds = {d.kind for s in tree.body for d in collect(s, ImportContext("m", False)).dynamic}
+    kinds = {
+        d.kind for s in tree.body for d in collect(s, ImportContext("m", is_package=False)).dynamic
+    }
     assert kind in kinds
 
 
 def test_vars_with_argument_is_not_dynamic() -> None:
-    out = collect(ast.parse("vars(obj)").body[0], ImportContext("m", False))
+    out = collect(ast.parse("vars(obj)").body[0], ImportContext("m", is_package=False))
     assert out.dynamic == []
 
 
 def test_shadowed_dynamic_builtin_is_not_dynamic() -> None:
     src = "def f(eval):\n    return eval('x')"
-    out = collect(ast.parse(src).body[0], ImportContext("m", False))
+    out = collect(ast.parse(src).body[0], ImportContext("m", is_package=False))
     assert out.dynamic == []

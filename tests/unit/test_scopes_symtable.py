@@ -59,7 +59,7 @@ def _symtable_globals(source: str) -> set[str]:
     top = symtable.symtable(source, "<stmt>", "exec")
     # Before 3.14 symtable has no is_comp_iter(); inlined comprehension variables (3.12+) then
     # show up in the module table, so exclude comprehension targets there (slightly weaker check).
-    legacy_comp_names = (
+    legacy_comp_names: set[str] = (
         _comprehension_targets(source)
         if sys.version_info >= (3, 12) and not hasattr(symtable.Symbol, "is_comp_iter")
         else set()
@@ -88,7 +88,7 @@ def _symtable_globals(source: str) -> set[str]:
 
 
 def _shakeout_globals(stmt: ast.stmt) -> set[str]:
-    out = collect(stmt, ImportContext("m", False))
+    out = collect(stmt, ImportContext("m", is_package=False))
     return {r.base.name for r in out.refs if isinstance(r.base, NameTarget)}
 
 
@@ -101,7 +101,7 @@ def _check_file(path: Path) -> list[str]:
     except (SyntaxError, UnicodeDecodeError, ValueError):
         return []
     lines = split_lines(source)
-    problems = []
+    problems: list[str] = []
     prev_end = 0
     for stmt in tree.body:
         start = min([stmt.lineno, *(d.lineno for d in getattr(stmt, "decorator_list", []))])

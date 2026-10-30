@@ -8,7 +8,6 @@ or inherits from a registering class; defining a subclass of a registering class
 from __future__ import annotations
 
 import ast
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from shakeout.analysis.effects import PURE_BASE_MODULES, PURE_BASES, EffectRules
@@ -16,6 +15,8 @@ from shakeout.analysis.scopes import attribute_chain
 from shakeout.model import NameTarget
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from shakeout.graph import Resolver, StmtKey
     from shakeout.model import Module
 

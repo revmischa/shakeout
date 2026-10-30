@@ -24,7 +24,7 @@ Header keys (all optional except ``description``):
     warnings            substrings that must each appear in some diagnostic
     stdout / exit_code  expected behavior of the *original* program (sanity check of the case)
     equivalent          default true: bundle must behave exactly like the original
-    noshake_equivalent  default = equivalent: a bundle built without shaking behaves like the original
+    noshake_equivalent  default = equivalent: a bundle built without shaking is equivalent
     bundle_exit_code    when equivalent = false
     bundle_stderr_contains  substrings expected in bundle stderr when equivalent = false
     soundness           default true: run the dynamic soundness oracle
@@ -77,7 +77,7 @@ class Case:
     files: dict[str, str]
     entry: str = "main.py"
     argv: tuple[str, ...] = ()
-    options: dict[str, Any] = field(default_factory=dict)
+    options: dict[str, Any] = field(default_factory=dict[str, Any])
     removed: frozenset[str] = frozenset()
     kept: frozenset[str] = frozenset()
     dropped_modules: frozenset[str] = frozenset()
@@ -164,7 +164,7 @@ def parse_case(path: Path, case_id: str) -> Case:
 
 
 def discover_cases(root: Path = CASES_DIR) -> list[Case]:
-    cases = []
+    cases: list[Case] = []
     for path in sorted(root.rglob("*.case")):
         case_id = path.relative_to(root).with_suffix("").as_posix()
         cases.append(parse_case(path, case_id))

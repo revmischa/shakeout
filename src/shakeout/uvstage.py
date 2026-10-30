@@ -10,7 +10,10 @@ from __future__ import annotations
 import hashlib
 import shutil
 import subprocess
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class StagingError(RuntimeError):
@@ -50,10 +53,32 @@ def stage(
     shutil.rmtree(site.parent, ignore_errors=True)
     site.mkdir(parents=True)
     requirements = site.parent / "requirements.txt"
-    _run([uv, "export", "--frozen", "--no-dev", "--no-hashes", "--no-emit-project",
-          "--no-header", "--quiet", "-o", str(requirements)], cwd=project)
-    install = [uv, "pip", "install", "--quiet", "--no-deps", "--target", str(site),
-               "-r", str(requirements)]
+    _run(
+        [
+            uv,
+            "export",
+            "--frozen",
+            "--no-dev",
+            "--no-hashes",
+            "--no-emit-project",
+            "--no-header",
+            "--quiet",
+            "-o",
+            str(requirements),
+        ],
+        cwd=project,
+    )
+    install = [
+        uv,
+        "pip",
+        "install",
+        "--quiet",
+        "--no-deps",
+        "--target",
+        str(site),
+        "-r",
+        str(requirements),
+    ]
     if python_version:
         install += ["--python-version", python_version]
     if platform:

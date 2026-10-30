@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from shakeout._compat import override
+
 if TYPE_CHECKING:
     import ast
     from pathlib import Path
@@ -57,11 +59,14 @@ class DynamicUse:
 
 @dataclass(frozen=True)
 class Diagnostic:
+    """A message for the user about something the analysis could not see through."""
+
     level: str  # "warning" | "info" | "error"
     message: str
     module: str = ""
     line: int = 0
 
+    @override
     def __str__(self) -> str:
         return f"{self.level}: {self.message}"
 
@@ -94,11 +99,14 @@ class Statement:
 
     @property
     def id(self) -> str:
+        """Stable identifier, e.g. ``pkg.mod@L12-L20``."""
         return f"{self.module}@L{self.start}-L{self.end}"
 
 
 @dataclass
 class Module:
+    """One source module (or the entry script) and its analysis."""
+
     name: str
     origin: Path | None
     filename: str  # display/compile filename, relative to its import root
@@ -116,6 +124,7 @@ class Module:
 
     @property
     def lines(self) -> list[str]:
+        """Source lines split on newlines only (as the tokenizer counts them)."""
         return split_lines(self.source)
 
 

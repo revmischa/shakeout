@@ -37,6 +37,7 @@ dev = [
     "actionlint-py>=1.7.12.25",
     "pre-commit>=4.6.2",
     "mutmut>=3.8.1",
+    "typing-extensions>=4.16.0",
 ]
 
 [tool.pytest.ini_options]
@@ -78,7 +79,8 @@ ignore = [
 ]
 "src/shakeout/cli.py" = ["T201"]  # a CLI prints
 "src/shakeout/runtime.py" = ["D"]  # embedded into bundles: a docstring would become __doc__
-"src/shakeout/analysis/scopes.py" = ["N802", "N815"]  # ast.NodeVisitor dictates visit_<Node> names
+# ast.NodeVisitor dictates visit_<Node> names; they implement dispatch, not a public API
+"src/shakeout/analysis/scopes.py" = ["N802", "N815", "D102"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -100,6 +102,28 @@ mark-parentheses = false
 ban-relative-imports = "all"
 
 [tool.pyright]
-include = ["src"]
+include = ["src", "tests"]
+exclude = ["tests/cases", "tests/corpus/drivers", "tests/fuzz/failures", "**/__pycache__"]
 typeCheckingMode = "strict"
 pythonVersion = "3.10"
+reportMissingModuleSource = "none"
+reportImplicitOverride = "error"
+reportImportCycles = "error"
+reportPropertyTypeMismatch = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportMissingSuperCall = "none"
+deprecateTypingAliases = true
+enableTypeIgnoreComments = false  # "# type: ignore" is for mypy, "# pyright: ignore" for pyright
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src", "tests"]
+exclude = ["^tests/cases/", "^tests/corpus/drivers/", "^tests/fuzz/failures/"]
+strict = true
+warn_unreachable = true
+enable_error_code = [
+  "redundant-expr", "truthy-bool", "truthy-iterable", "ignore-without-code",
+  "possibly-undefined", "redundant-self", "explicit-override", "unused-awaitable",
+  "unimported-reveal", "mutable-override", "exhaustive-match",
+]

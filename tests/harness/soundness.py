@@ -6,7 +6,12 @@ import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+from shakeout._compat import override
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 from tests.harness.run import RunResult, run_python
 
@@ -33,6 +38,7 @@ class Violation:
     firstlineno: int
     why: str
 
+    @override
     def __str__(self) -> str:
         return f"{self.statement_id}: {self.function} (line {self.firstlineno}) {self.why}"
 
@@ -47,7 +53,7 @@ def trace_execution(
 
 
 def check_soundness(
-    records: list[dict[str, Any]], statements: list[StatementLike]
+    records: list[dict[str, Any]], statements: Sequence[StatementLike]
 ) -> list[Violation]:
     """Return every recorded execution that falls inside a removed top-level statement."""
     by_file: dict[str, list[StatementLike]] = {}

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -12,9 +13,6 @@ from tests.harness.project import write_project
 from tests.harness.run import run_python
 from tests.harness.soundness import check_soundness, trace_execution
 from tests.harness.tracebacks import frames, normalize_stderr
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -57,8 +55,11 @@ def _lib_statements(src: Path, *, kept: set[str]) -> list[FakeStatement]:
     ]
 
 
+Traced = tuple[Path, list[dict[str, Any]]]
+
+
 @pytest.fixture
-def traced(tmp_path: Path):
+def traced(tmp_path: Path) -> Traced:
     src = write_project(tmp_path / "src", PROGRAM)
     result, records = trace_execution(src / "main.py", cwd=tmp_path / "cwd")
     assert result.returncode == 0, result.describe()
@@ -66,31 +67,31 @@ def traced(tmp_path: Path):
     return src, records
 
 
-def test_soundness_flags_removed_function_that_was_called(traced) -> None:
+def test_soundness_flags_removed_function_that_was_called(traced: Traced) -> None:
     src, records = traced
     violations = check_soundness(records, _lib_statements(src, kept={"helper", "VALUE"}))
     assert [v.statement_id for v in violations] == ["lib:called"]
 
 
-def test_soundness_ignores_definition_time_execution_of_removed_statement(traced) -> None:
+def test_soundness_ignores_definition_time_execution_of_removed_statement(traced: Traced) -> None:
     # helper only runs while VALUE's own statement executes; removing both is sound.
     src, records = traced
     assert check_soundness(records, _lib_statements(src, kept={"called"})) == []
 
 
-def test_soundness_flags_helper_used_by_kept_statement(traced) -> None:
+def test_soundness_flags_helper_used_by_kept_statement(traced: Traced) -> None:
     src, records = traced
     violations = check_soundness(records, _lib_statements(src, kept={"called", "VALUE"}))
     assert [v.statement_id for v in violations] == ["lib:helper"]
 
 
-def test_soundness_drop_everything_bundler_is_caught(traced) -> None:
+def test_soundness_drop_everything_bundler_is_caught(traced: Traced) -> None:
     src, records = traced
     violations = check_soundness(records, _lib_statements(src, kept=set()))
     assert {v.statement_id for v in violations} == {"lib:called"}
 
 
-def test_soundness_never_called_function_is_not_flagged(traced) -> None:
+def test_soundness_never_called_function_is_not_flagged(traced: Traced) -> None:
     src, records = traced
     stmts = _lib_statements(src, kept={"called", "helper", "VALUE"})
     assert check_soundness(records, stmts) == []
@@ -160,7 +161,8 @@ def test_case_parser_requires_entry(tmp_path: Path) -> None:
 def test_case_parser_reads_files_verbatim(tmp_path: Path) -> None:
     p = tmp_path / "x.case"
     p.write_text(
-        'description = "d"\nremoved = ["lib:f"]\n=== main.py\nimport lib\n\n=== lib.py\ndef f(): pass\n'
+        'description = "d"\nremoved = ["lib:f"]\n'
+        "=== main.py\nimport lib\n\n=== lib.py\ndef f(): pass\n"
     )
     case = parse_case(p, "x")
     assert case.files == {"main.py": "import lib\n\n", "lib.py": "def f(): pass\n"}

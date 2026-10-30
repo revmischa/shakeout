@@ -87,7 +87,7 @@ class _ShakeoutRuntime:
         filename, is_package, _ = info
         spec = self.spec_class(
             fullname,
-            self,  # pyright: ignore[reportArgumentType] - implements the Loader protocol
+            self,  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType] - a Loader
             origin=filename,
             is_package=is_package,
         )
@@ -120,7 +120,7 @@ class _ShakeoutRuntime:
         if hasattr(exc, "add_note"):
             exc.add_note(note)  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
         else:  # Python 3.10 has no notes; excepthook() prints __notes__ itself
-            exc.__notes__ = [*getattr(exc, "__notes__", ()), note]  # pyright: ignore[reportAttributeAccessIssue]
+            exc.__notes__ = [*getattr(exc, "__notes__", ()), note]  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
 
     @staticmethod
     def imported_name(exc: ImportError) -> str | None:

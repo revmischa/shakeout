@@ -29,6 +29,8 @@ IMPURE_STDLIB = frozenset(
 
 @dataclass(frozen=True)
 class Found:
+    """A located module."""
+
     name: str
     origin: Path | None  # None for namespace packages
     is_package: bool
@@ -37,6 +39,7 @@ class Found:
 
 
 def is_stdlib(name: str) -> bool:
+    """Whether ``name`` belongs to the standard library."""
     top = name.partition(".")[0]
     return top in sys.stdlib_module_names or top == "__future__"
 
@@ -47,6 +50,8 @@ def is_pure_external(name: str) -> bool:
 
 
 class ModuleFinder:
+    """Finds modules on a search path and decides which ones get bundled."""
+
     def __init__(self, search_path: list[str], roots: list[Path], include: frozenset[str]) -> None:
         self.search_path = [p for p in search_path if p]
         self.roots = [Path(os.path.realpath(r)) for r in roots]
@@ -54,6 +59,7 @@ class ModuleFinder:
         self._find = cache(self._find_uncached)
 
     def find(self, name: str) -> Found | None:
+        """Locate ``name`` (cached); None if it is not importable from the search path."""
         return self._find(name)
 
     def _find_uncached(self, name: str) -> Found | None:
@@ -87,6 +93,7 @@ class ModuleFinder:
         return Found(name, origin, is_package, locations, kind)
 
     def bundleable(self, found: Found) -> bool:
+        """Whether ``found`` is first-party (or included) source that shakeout bundles."""
         if found.kind not in ("source", "namespace"):
             return False
         top = found.name.partition(".")[0]

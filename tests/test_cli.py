@@ -15,13 +15,28 @@ if TYPE_CHECKING:
 
 FILES = {
     "main.py": "from lib import used\nprint(used())\n",
-    "lib.py": "def used():\n    return helper()\n\ndef helper():\n    return 'ok'\n\ndef unused():\n    pass\n",
+    "lib.py": """\
+        def used():
+            return helper()
+
+
+        def helper():
+            return 'ok'
+
+
+        def unused():
+            pass
+        """,
 }
 
 
 def cli(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, "-m", "shakeout", *args], cwd=cwd, capture_output=True, text=True
+        [sys.executable, "-m", "shakeout", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
 
@@ -41,7 +56,13 @@ def test_build_tree_from_pyproject(tmp_path: Path) -> None:
         tmp_path / "src",
         {
             **FILES,
-            "pyproject.toml": '[tool.shakeout]\nentry = "main.py"\ntarget = "tree"\nout = "build/app"\nkeep = ["lib:unused"]\n',
+            "pyproject.toml": """\
+                [tool.shakeout]
+                entry = "main.py"
+                target = "tree"
+                out = "build/app"
+                keep = ["lib:unused"]
+                """,
         },
     )
     proc = cli("build", cwd=src)
@@ -62,7 +83,7 @@ def test_report_and_why(tmp_path: Path) -> None:
     why = cli("why", str(src / "main.py"), "lib:helper", cwd=tmp_path)
     assert why.returncode == 0
     lines = why.stdout.splitlines()
-    assert lines[0].startswith("lib@L4-L5")
+    assert lines[0].startswith("lib@L5-L6")
     assert "main" in why.stdout
     removed = cli("why", str(src / "main.py"), "lib:unused", cwd=tmp_path)
     assert removed.returncode == 1

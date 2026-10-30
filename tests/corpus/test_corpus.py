@@ -9,14 +9,21 @@ Nightly tier: needs network on first run (packages are cached under .corpus/).
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover
+    import tomli as tomllib
 from tests.harness.run import run_python
 from tests.harness.soundness import check_soundness, trace_execution
 from tests.harness.tracebacks import normalize_stderr
@@ -34,10 +41,8 @@ pytestmark = pytest.mark.nightly
 
 @pytest.fixture(scope="session")
 def corpus_site() -> Path:
-    import fcntl
-
     CACHE.parent.mkdir(parents=True, exist_ok=True)
-    with open(CACHE.parent / ".lock", "w") as lock:
+    with (CACHE.parent / ".lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)  # one xdist worker installs, the rest wait
         stamp = CACHE / ".requirements"
         if stamp.exists() and stamp.read_text() == REQUIREMENTS.read_text():
@@ -68,10 +73,9 @@ def corpus_site() -> Path:
 OVERRIDES = HERE / "overrides.toml"
 
 
-def _overrides(name: str) -> dict[str, object]:
-    import tomllib
-
-    return tomllib.loads(OVERRIDES.read_text()).get(name, {})
+def _overrides(name: str) -> dict[str, Any]:
+    table: dict[str, dict[str, Any]] = tomllib.loads(OVERRIDES.read_text())
+    return table.get(name, {})
 
 
 def _source_bytes(paths: list[Path]) -> int:
@@ -92,7 +96,7 @@ def test_corpus_driver(driver: Path, corpus_site: Path, tmp_path: Path) -> None:
     original = run_python(entry, cwd=root / "c0")
     assert original.returncode == 0, original.describe()
 
-    options = Options(**_overrides(driver.stem.removesuffix("_driver")))  # type: ignore[arg-type]
+    options = Options(**_overrides(driver.stem.removesuffix("_driver")))
     result = analyze(entry, options)
     for target in ("single", "tree"):
         built = build(entry, root / target, target=target, options=options)
@@ -112,7 +116,7 @@ def test_corpus_driver(driver: Path, corpus_site: Path, tmp_path: Path) -> None:
         [m.origin for m in result.modules.values() if m.origin and not m.is_entry]
     )
     after = sum((root / "tree" / m.filename).stat().st_size for m in bundled if not m.is_entry)
-    metrics = json.loads(METRICS.read_text()) if METRICS.exists() else {}
+    metrics: dict[str, object] = json.loads(METRICS.read_text()) if METRICS.exists() else {}
     metrics[driver.stem.removesuffix("_driver")] = {
         "modules_discovered": len(result.modules) - 1,
         "modules_bundled": len(result.loaded) - 1,

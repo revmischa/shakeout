@@ -31,7 +31,9 @@ class Item:
     module: int
     index: int
     kind: str
-    calls: list[tuple[int, int, str]] = field(default_factory=list)  # (module, index, style)
+    calls: list[tuple[int, int, str]] = field(
+        default_factory=list[tuple[int, int, str]]
+    )  # (module, index, style)
     value: int = 0
 
     @property
@@ -101,61 +103,86 @@ def _use_expr(prog: Program, m: int, i: int, via: str) -> str:
     return f"{via}()"
 
 
-def render(prog: Program) -> dict[str, str]:
-    files: dict[str, str] = {
-        "reg.py": (
-            "REGISTRY = {}\n\n\ndef register(fn):\n    REGISTRY[fn.__name__] = fn\n    return fn\n\n\n"
-            "class Plugin:\n    seen = []\n\n    def __init_subclass__(cls):\n"
-            "        Plugin.seen.append(cls.__name__)\n\n    def run(self):\n        return 0\n"
-        ),
-    }
-    for m, items in enumerate(prog.modules):
-        top_imports = sorted({tm for it in items for (tm, _, style) in it.calls if style == "attr"})
-        lines = ["import reg"] + [f"import m{k}" for k in top_imports] + [""]
-        for it in items:
-            body_calls = []
-            local_imports = []
-            for tm, ti, style in it.calls:
-                target = prog.item(tm, ti)
-                if style == "local":
-                    body_calls.append(_use_expr(prog, tm, ti, target.name))
-                elif style == "attr":
-                    body_calls.append(_use_expr(prog, tm, ti, f"m{tm}.{target.name}"))
-                elif style == "from_local":
-                    local_imports.append(f"    from m{tm} import {target.name}")
-                    body_calls.append(_use_expr(prog, tm, ti, target.name))
-            total = " + ".join([str(it.value), *(f"_n({c})" for c in body_calls)])
-            if it.kind in ("func", "registered", "dynamic"):
-                deco = "@reg.register\n" if it.kind == "registered" else ""
-                lines.append(f"{deco}def {it.name}():")
-                lines.extend(local_imports)
-                lines.append(f"    print({it.name!r})")
-                if it.kind == "dynamic":
-                    lines.append(f"    return globals()[{it.name!r}].__name__.count('_') + {total}")
-                else:
-                    lines.append(f"    return {total}")
-            elif it.kind == "plain_class":
-                lines.append(f"class {it.name}:")
-                lines.append("    def run(self):")
-                lines.extend("    " + li for li in local_imports)
-                lines.append(f"        print({it.name!r})")
-                lines.append(f"        return {total}")
-            elif it.kind == "plugin":
-                lines.append(f"class {it.name}(reg.Plugin):")
-                lines.append("    pass")
-            elif it.kind == "const":
-                lines.append(f"{it.name} = {it.value}")
-            elif it.kind == "effect":
-                lines.append(f"print('effect m{m} {it.index}')")
-            elif it.kind == "reexport":
-                tm, ti, _ = it.calls[0]
-                target = prog.item(tm, ti)
-                lines.append(f"from m{tm} import {target.name} as {it.name}")
-            lines.extend(["", ""])
-        lines.insert(1, "def _n(v):\n    return v if isinstance(v, int) else 0\n\n")
-        files[f"m{m}.py"] = "\n".join(lines).rstrip() + "\n"
+REG_MODULE = """\
+REGISTRY = {}
+
+
+def register(fn):
+    REGISTRY[fn.__name__] = fn
+    return fn
+
+
+class Plugin:
+    seen = []
+
+    def __init_subclass__(cls):
+        Plugin.seen.append(cls.__name__)
+
+    def run(self):
+        return 0
+"""
+
+
+def _calls(prog: Program, it: Item) -> tuple[list[str], list[str]]:
+    """Expressions an item's body evaluates, and the local imports they need."""
+    body_calls: list[str] = []
+    local_imports: list[str] = []
+    for tm, ti, style in it.calls:
+        target = prog.item(tm, ti)
+        if style == "local":
+            body_calls.append(_use_expr(prog, tm, ti, target.name))
+        elif style == "attr":
+            body_calls.append(_use_expr(prog, tm, ti, f"m{tm}.{target.name}"))
+        elif style == "from_local":
+            local_imports.append(f"    from m{tm} import {target.name}")
+            body_calls.append(_use_expr(prog, tm, ti, target.name))
+    return body_calls, local_imports
+
+
+def _render_callable(it: Item, total: str, local_imports: list[str]) -> list[str]:
+    if it.kind == "plain_class":
+        return [
+            f"class {it.name}:",
+            "    def run(self):",
+            *("    " + li for li in local_imports),
+            f"        print({it.name!r})",
+            f"        return {total}",
+        ]
+    deco = ["@reg.register"] if it.kind == "registered" else []
+    if it.kind == "dynamic":
+        ret = f"    return globals()[{it.name!r}].__name__.count('_') + {total}"
+    else:
+        ret = f"    return {total}"
+    return [*deco, f"def {it.name}():", *local_imports, f"    print({it.name!r})", ret]
+
+
+def _render_item(prog: Program, m: int, it: Item) -> list[str]:
+    if it.kind in ("func", "registered", "dynamic", "plain_class"):
+        body_calls, local_imports = _calls(prog, it)
+        total = " + ".join([str(it.value), *(f"_n({c})" for c in body_calls)])
+        return _render_callable(it, total, local_imports)
+    if it.kind == "plugin":
+        return [f"class {it.name}(reg.Plugin):", "    pass"]
+    if it.kind == "effect":
+        return [f"print('effect m{m} {it.index}')"]
+    if it.kind == "reexport":
+        tm, ti, _ = it.calls[0]
+        return [f"from m{tm} import {prog.item(tm, ti).name} as {it.name}"]
+    return [f"{it.name} = {it.value}"]  # const
+
+
+def _render_module(prog: Program, m: int, items: list[Item]) -> str:
+    top_imports = sorted({tm for it in items for (tm, _, style) in it.calls if style == "attr"})
+    lines = ["import reg", "def _n(v):\n    return v if isinstance(v, int) else 0\n\n"]
+    lines += [f"import m{k}" for k in top_imports] + [""]
+    for it in items:
+        lines += [*_render_item(prog, m, it), "", ""]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_main(prog: Program) -> str:
     main = ["import reg"]
-    calls = []
+    calls: list[str] = []
     for m, i, style in prog.main_uses:
         item = prog.item(m, i)
         if style == "attr":
@@ -168,5 +195,13 @@ def render(prog: Program) -> dict[str, str]:
     main.extend(f"print('result', {c})" for c in calls)
     main.append("for _k in sorted(reg.REGISTRY):\n    print('registered', _k, reg.REGISTRY[_k]())")
     main.append("print('plugins', sorted(reg.Plugin.seen))")
-    files["main.py"] = "\n".join(main) + "\n"
+    return "\n".join(main) + "\n"
+
+
+def render(prog: Program) -> dict[str, str]:
+    """Source files of ``prog``: reg.py, m0.py ... and main.py."""
+    files = {"reg.py": REG_MODULE}
+    for m, items in enumerate(prog.modules):
+        files[f"m{m}.py"] = _render_module(prog, m, items)
+    files["main.py"] = _render_main(prog)
     return files
