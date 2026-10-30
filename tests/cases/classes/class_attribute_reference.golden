@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from lib import Settings  [used as Settings.port]
+  + L3        print(Settings.port)  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        DEFAULT_PORT = 8080  [used as DEFAULT_PORT]
+  - L2        UNUSED = 1
+  + L5-6      class Settings:  [used as Settings.port]

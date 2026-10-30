@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        from lib import f  [used as f]
+  + L3        print(*f())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        i = 99  [used as i]
+  + L4-6      def f():  [used as f]

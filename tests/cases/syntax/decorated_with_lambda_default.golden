@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        from lib import dbl  [used as dbl]
+  + L3        print(dbl(3))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  - L1        BASE = 1
+  + L2        FACTOR = 2  [used as FACTOR]
+  - L3        inc = lambda x: x + BASE
+  + L4        dbl = lambda x: x * FACTOR  [used as dbl]

@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import pkg  [used as pkg.sub.f]
+  + L2        import pkg.sub  [used as pkg.sub.f]
+  + L4        print(pkg.sub.f())  [root: expr statement at module level]
+module pkg [pkg/__init__.py] bundled
+module pkg.sub [pkg/sub.py] bundled
+  + L1-2      def f():  [used as pkg.sub.f]

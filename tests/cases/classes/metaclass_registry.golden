@@ -1,0 +1,11 @@
+module __main__ [main.py] bundled
+  + L1        import models  [root: imports 'models', which has side effects]
+  + L2        from meta import Meta  [root: imports 'meta', which has side effects]
+  + L4        print(sorted(Meta.created))  [root: expr statement at module level]
+module meta [meta.py] bundled
+  + L1-8      class Meta(type):  [used as Meta.created]
+  + L11-12    class Model(metaclass=Meta):  [root: class keyword metaclass= is passed to the metaclass/__init_subclass__]
+module models [models.py] bundled
+  + L1        from meta import Model  [root: imports 'meta', which has side effects]
+  + L4-5      class User(Model):  [root: base 'Model' registers subclasses (__init_subclass__/metaclass)]
+  + L8-9      class Order(Model):  [root: base 'Model' registers subclasses (__init_subclass__/metaclass)]

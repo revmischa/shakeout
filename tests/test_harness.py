@@ -163,3 +163,25 @@ def test_case_parser_reads_files_verbatim(tmp_path: Path) -> None:
 def test_catalog_parses_and_ids_are_unique() -> None:
     cases = discover_cases()
     assert len({c.id for c in cases}) == len(cases)
+
+
+GROUP_TRACEBACK = """\
+  + Exception Group Traceback (most recent call last):
+  |   File "/tmp/out/app.py", line 117, in <module>
+  |     _shakeout_bootstrap()
+  |     ~~~~~~~~~~~~~~~~~~~^^
+  |   File "/tmp/src/main.py", line 4, in <module>
+  |     run()
+  | ExceptionGroup: many (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | TypeError: 3
+    +------------------------------------
+"""
+
+
+def test_normalize_handles_exception_group_frames() -> None:
+    got = normalize_stderr(
+        GROUP_TRACEBACK, strip_prefixes=["/tmp/src", "/tmp/out"], runtime_files=["/tmp/out/app.py"]
+    )
+    assert '"/tmp/out/app.py"' not in got and "_shakeout_bootstrap" not in got
+    assert '  |   File "main.py", line 4, in <module>\n  |     run()\n' in got

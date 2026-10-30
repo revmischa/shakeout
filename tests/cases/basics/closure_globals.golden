@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        from lib import make  [used as make]
+  + L3        print(make()("x"))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        PREFIX = "<"  [used as PREFIX]
+  + L2        SUFFIX = "!>"  [used as SUFFIX]
+  - L3        UNUSED = "?"
+  + L6-11     def make():  [used as make]

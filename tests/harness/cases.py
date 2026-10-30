@@ -24,6 +24,7 @@ Header keys (all optional except ``description``):
     warnings            substrings that must each appear in some diagnostic
     stdout / exit_code  expected behavior of the *original* program (sanity check of the case)
     equivalent          default true: bundle must behave exactly like the original
+    noshake_equivalent  default = equivalent: a bundle built without shaking behaves like the original
     bundle_exit_code    when equivalent = false
     bundle_stderr_contains  substrings expected in bundle stderr when equivalent = false
     soundness           default true: run the dynamic soundness oracle
@@ -46,7 +47,7 @@ else:  # pragma: no cover
 
 CASES_DIR = Path(__file__).resolve().parent.parent / "cases"
 _KNOWN_KEYS = {
-    "description", "entry", "argv", "options", "removed", "kept", "dropped_modules",
+    "description", "entry", "noshake_equivalent", "argv", "options", "removed", "kept", "dropped_modules",
     "bundled_modules", "warnings", "stdout", "exit_code", "equivalent", "bundle_exit_code",
     "bundle_stderr_contains", "soundness", "targets", "min_python", "xfail",
 }
@@ -69,6 +70,7 @@ class Case:
     stdout: str | None = None
     exit_code: int = 0
     equivalent: bool = True
+    noshake_equivalent: bool = True
     bundle_exit_code: int | None = None
     bundle_stderr_contains: tuple[str, ...] = ()
     soundness: bool = True
@@ -129,6 +131,7 @@ def parse_case(path: Path, case_id: str) -> Case:
         stdout=header.get("stdout"),
         exit_code=header.get("exit_code", 0),
         equivalent=header.get("equivalent", True),
+        noshake_equivalent=header.get("noshake_equivalent", header.get("equivalent", True)),
         bundle_exit_code=header.get("bundle_exit_code"),
         bundle_stderr_contains=tuple(header.get("bundle_stderr_contains", ())),
         soundness=header.get("soundness", True),

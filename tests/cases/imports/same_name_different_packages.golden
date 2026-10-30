@@ -1,0 +1,12 @@
+module __main__ [main.py] bundled
+  + L1        from a.util import f  [used as f]
+  + L2        from b.util import g  [used as g]
+  + L4        print(f(), g())  [root: expr statement at module level]
+module a [a/__init__.py] bundled
+module a.util [a/util.py] bundled
+  + L1-2      def f():  [used as f]
+  - L5-6      def g():
+module b [b/__init__.py] bundled
+module b.util [b/util.py] bundled
+  - L1-2      def f():
+  + L5-6      def g():  [used as g]

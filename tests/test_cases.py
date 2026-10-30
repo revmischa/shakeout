@@ -141,7 +141,7 @@ def test_equivalence(case: Case, target: str, materialize) -> None:
         options=_options(case, shake=shake),
     )
     bundled = run_python(built.run_path, cwd=m.root / f"cwd-{target}", argv=case.argv)
-    if case.equivalent:
+    if case.equivalent if shake else case.noshake_equivalent:
         assert bundled.returncode == m.original.returncode, bundled.describe()
         assert bundled.stdout == m.original.stdout, bundled.describe()
         want = normalize_stderr(m.original.stderr, strip_prefixes=[str(m.src)])

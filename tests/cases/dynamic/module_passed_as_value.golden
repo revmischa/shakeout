@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import mod  [used as mod]
+  + L4-5      def names(m):  [used as names]
+  + L8        print(names(mod))  [root: expr statement at module level]
+module mod [mod.py] bundled
+  + L1-2      def a():  [whole: module object used as a value (mod) at __main__@L8-L8]
+  + L5-6      def b():  [whole: module object used as a value (mod) at __main__@L8-L8]

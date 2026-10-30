@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        from lib import fact, even  [used as fact]
+  + L3        print(fact(5), even(10))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def fact(n):  [used as fact]
+  + L5-6      def even(n):  [used as even]
+  + L9-10     def odd(n):  [used as odd]
+  - L13-14    def ping2(n):
+  - L17-18    def pong2(n):

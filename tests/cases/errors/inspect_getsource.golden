@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        import inspect  [used as inspect.getsource]
+  + L3        from lib import f  [used as f]
+  + L5        print(inspect.getsource(f))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  - L1-2      def unused():
+  + L5-6      def f():  [used as f]
+external: inspect

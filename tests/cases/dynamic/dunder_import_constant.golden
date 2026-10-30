@@ -1,0 +1,5 @@
+module __main__ [main.py] bundled
+  + L1        m = __import__("target")  [root: initializer "__import__('target')" may have side effects]
+  + L2        print(m.T)  [root: expr statement at module level]
+module target [target.py] bundled
+  + L1        T = "t"  [whole: module object used as a value (target) at __main__@L1-L1]

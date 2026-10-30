@@ -1,0 +1,17 @@
+module __main__ [main.py] bundled
+  + L1        from p.q.r.leaf import use  [used as use]
+  + L3        print(use())  [root: expr statement at module level]
+module p [p/__init__.py] bundled
+module p.q [p/q/__init__.py] bundled
+module p.q.mid [p/q/mid.py] bundled
+  + L1        M = "M"  [used as M]
+module p.q.r [p/q/r/__init__.py] bundled
+module p.q.r.leaf [p/q/r/leaf.py] bundled
+  + L1        from ...top import T  [used as T]
+  + L2        from ..mid import M  [used as M]
+  - L3        from . import sib
+  + L6-7      def use():  [used as use]
+module p.q.r.sib [p/q/r/sib.py] dropped
+  - L1        X = 1
+module p.top [p/top.py] bundled
+  + L1        T = "T"  [used as T]

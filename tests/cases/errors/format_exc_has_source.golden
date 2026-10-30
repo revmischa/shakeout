@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import traceback  [used as traceback.format_exc]
+  + L3        from lib import divide  [used as divide]
+  + L5-9      try:  [root: try statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def divide(a, b):  [used as divide]
+external: traceback

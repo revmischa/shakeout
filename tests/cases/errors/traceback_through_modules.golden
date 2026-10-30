@@ -1,0 +1,14 @@
+module __main__ [main.py] bundled
+  + L1        from a import go  [used as go]
+  + L3        go()  [root: expr statement at module level]
+module a [a.py] bundled
+  + L1        from b import step  [used as step]
+  - L4-5      def unused_a():
+  + L8-9      def go():  [used as go]
+module b [b.py] bundled
+  + L1        from c import fail  [used as fail]
+  - L4-5      def unused_b():
+  + L8-9      def step(n):  [used as step]
+module c [c.py] bundled
+  - L1-2      def unused_c():
+  + L5-6      def fail(n):  [used as fail]

@@ -1,0 +1,13 @@
+module __main__ [main.py] bundled
+  + L1        from a import target  [used as target]
+  + L3        print(target())  [root: expr statement at module level]
+module a [a/__init__.py] bundled
+  + L1        from .b import target  [used as target]
+module a.b [a/b/__init__.py] bundled
+  + L1        from .core import target  [used as target]
+  - L2        from .extra import thing
+module a.b.core [a/b/core.py] bundled
+  + L1-2      def target():  [used as target]
+  - L5-6      def other():
+module a.b.extra [a/b/extra.py] dropped
+  - L1-2      def thing():

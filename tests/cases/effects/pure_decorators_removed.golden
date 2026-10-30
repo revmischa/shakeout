@@ -1,0 +1,13 @@
+module __main__ [main.py] bundled
+  + L1        from lib import used  [used as used]
+  + L3        print(used())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  - L1        import contextlib
+  - L2        import functools
+  - L3        from dataclasses import dataclass
+  - L6-8      @functools.lru_cache(maxsize=None)
+  - L11-13    @functools.cache
+  - L16-18    @dataclass(frozen=True)
+  - L21-23    @contextlib.contextmanager
+  + L26-27    def used():  [used as used]
+external: contextlib, dataclasses, functools

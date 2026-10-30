@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from stars import *  [root: star import (binds names that cannot be listed statically)]
+  + L3        print("pub" in dir(), "_priv" in dir() or "hi...  [root: expr statement at module level]
+module stars [stars.py] bundled
+  + L1        __all__ = ["pub"]  [root: binds a module dunder]
+  + L4-5      def pub():  [whole: module object used as a value (stars) at __main__@L1-L1]
+  + L8-9      def hidden():  [whole: module object used as a value (stars) at __main__@L1-L1]

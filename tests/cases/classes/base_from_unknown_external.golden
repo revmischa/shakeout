@@ -1,0 +1,5 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [root: imports 'lib', which has side effects]
+module lib [lib.py] bundled
+  + L1        from some_framework_not_installed import Model  [root: imports 'some_framework_not_installed', which cannot be found]
+  + L4-5      class Mine(Model):  [root: base 'Model' comes from outside the bundle and may register subclasses]

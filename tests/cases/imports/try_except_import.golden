@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        from compat import loads  [root: imports 'compat', which has side effects]
+  + L3        print(loads('{"a": 1}'))  [root: expr statement at module level]
+module compat [compat.py] bundled
+  + L1-4      try:  [root: try statement at module level]
+external: json

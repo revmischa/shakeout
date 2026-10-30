@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        import typing  [used as typing.get_type_hints]
+  + L3        from lib import f  [used as f]
+  + L5        print(typing.get_type_hints(f))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        from __future__ import annotations  [root: __future__ import]
+  + L4-5      class Point:  [used as Point]
+  + L8-9      def f(p: Point):  [used as f]
+external: __future__, typing

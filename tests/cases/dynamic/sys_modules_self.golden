@@ -1,0 +1,10 @@
+module __main__ [main.py] bundled
+  + L1        import selfref  [used as selfref.pick]
+  + L3        print(selfref.pick("b"))  [root: expr statement at module level]
+module selfref [selfref.py] bundled, kept whole: selfref.py:13 accesses sys.modules
+  + L1        import sys  [whole: selfref.py:13 accesses sys.modules]
+  + L4-5      def a():  [whole: selfref.py:13 accesses sys.modules]
+  + L8-9      def b():  [whole: selfref.py:13 accesses sys.modules]
+  + L12-13    def pick(name):  [used as selfref.pick]
+external: sys
+info: kept selfref whole: selfref.py:13 accesses sys.modules

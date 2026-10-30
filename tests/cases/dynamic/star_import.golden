@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        from stars import *  [root: star import (binds names that cannot be listed statically)]
+  + L3        print(one())  [root: expr statement at module level]
+module stars [stars.py] bundled
+  + L1-2      def one():  [whole: module object used as a value (stars) at __main__@L1-L1]
+  + L5-6      def two():  [whole: module object used as a value (stars) at __main__@L1-L1]

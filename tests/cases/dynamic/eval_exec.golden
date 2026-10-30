@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from calc import run  [used as run]
+  + L3        print(run("double(4)"))  [root: expr statement at module level]
+module calc [calc.py] bundled, kept whole: calc.py:6 calls eval()
+  + L1-2      def double(x):  [whole: calc.py:6 calls eval()]
+  + L5-6      def run(expr):  [used as run]
+info: kept calc whole: calc.py:6 calls eval()

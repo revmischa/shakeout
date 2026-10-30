@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        from consts import A  [used as A]
+  + L3        print(A)  [root: expr statement at module level]
+module consts [consts.py] bundled
+  + L1        A = 1  [used as A]
+  - L2        B = (1, 2, "three", None, 4.5, b"x")
+  - L3        C = {"k": [1, 2], "j": {3}}
+  - L4        D = -A + 2 * 3
+  - L5        E = f"{A}-x"

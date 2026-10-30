@@ -1,0 +1,4 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [root: imports 'lib', which has side effects]
+module lib [lib.py] bundled
+  + L1        import definitely_not_a_module_xyz  [root: imports 'definitely_not_a_module_xyz', which cannot be found]

@@ -1,0 +1,5 @@
+module __main__ [main.py] bundled
+  + L1        from lib import run  [used as run]
+  + L3-6      try:  [root: trystar statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def run():  [used as run]

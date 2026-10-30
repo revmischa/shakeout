@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        import wrapper  [root: imports 'wrapper', which has side effects]
+  + L3        print("unreachable")  [root: expr statement at module level]
+module wrapper [wrapper.py] bundled
+  + L1        import not_installed_pkg_abc  [root: imports 'not_installed_pkg_abc', which cannot be found]
+  - L4-5      def f():

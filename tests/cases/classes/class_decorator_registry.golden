@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [root: imports 'lib', which has side effects]
+  + L3        print(lib.SEEN)  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        SEEN = []  [used as lib.SEEN]
+  + L4-6      def track(cls):  [used as track]
+  + L9-11     @track  [root: class decorator 'track' may have side effects]

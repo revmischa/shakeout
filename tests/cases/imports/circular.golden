@@ -1,0 +1,11 @@
+module __main__ [main.py] bundled
+  + L1        import a  [used as a.fa]
+  + L3        print(a.fa())  [root: expr statement at module level]
+module a [a.py] bundled
+  + L1        import b  [used as b.fb]
+  + L4-5      def fa():  [used as a.fa]
+  - L8-9      def ua():
+module b [b.py] bundled
+  - L1        import a
+  + L4-5      def fb():  [used as b.fb]
+  - L8-9      def ub():

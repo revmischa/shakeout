@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        import config  [used as config.MODE]
+  + L2        import patcher  [root: imports 'patcher', which has side effects]
+  + L4        print(config.MODE)  [root: expr statement at module level]
+module config [config.py] bundled
+  + L1        MODE = "default"  [used as config.MODE]
+module patcher [patcher.py] bundled
+  + L1        import config  [used as config.MODE]
+  + L3        config.MODE = "patched"  [root: assignment stores into an attribute or item]

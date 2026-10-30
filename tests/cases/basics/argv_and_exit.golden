@@ -1,0 +1,5 @@
+module __main__ [main.py] bundled
+  + L1        import sys  [used as sys.argv]
+  + L3        print(sys.argv[1:])  [root: expr statement at module level]
+  + L4        sys.exit(3)  [root: expr statement at module level]
+external: sys

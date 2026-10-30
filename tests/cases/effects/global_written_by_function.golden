@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [used as lib.init]
+  + L3        lib.init()  [root: expr statement at module level]
+  + L4        print(lib.STATE)  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        STATE = None  [used as lib.STATE]
+  + L4-6      def init():  [used as lib.init]

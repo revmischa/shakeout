@@ -1,0 +1,10 @@
+module __main__ [main.py] bundled
+  + L1        from pkg import mod  [root: imports 'pkg.mod', which has side effects]
+  + L3        print(mod.NAME, mod.PKG, mod.SPEC, mod.IS_FIL...  [root: expr statement at module level]
+module pkg [pkg/__init__.py] bundled
+module pkg.mod [pkg/mod.py] bundled
+  + L1        NAME = __name__  [used as mod.NAME]
+  + L2        PKG = __package__  [used as mod.PKG]
+  + L3        SPEC = __spec__.name  [used as mod.SPEC]
+  + L4        IS_FILE_SET = __file__.endswith("mod.py")  [root: initializer "__file__.endswith('mod.py')" may have side effects]
+warning: pkg/mod.py:4 uses __file__; files next to the module are not bundled and __file__ points to a virtual path

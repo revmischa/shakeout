@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled, kept whole: main.py:5 accesses sys.modules
+  + L1        import sys  [whole: main.py:5 accesses sys.modules]
+  + L3        import lib  [whole: main.py:5 accesses sys.modules]
+  + L5        print(lib.visible() and getattr(sys.modules["...  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def visible():  [used as lib.visible]
+  - L5-6      def hidden():
+external: sys
+info: kept __main__ whole: main.py:5 accesses sys.modules

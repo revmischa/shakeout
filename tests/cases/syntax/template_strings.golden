@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        from lib import t  [used as t]
+  + L3        print(type(t()).__name__)  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        who = "world"  [used as who]
+  + L4-5      def t():  [used as t]

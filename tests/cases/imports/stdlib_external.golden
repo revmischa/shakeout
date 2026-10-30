@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        from lib import root  [used as root]
+  + L3        print(root(9))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  - L1        import json
+  + L2        import math  [used as math.sqrt]
+  + L5-6      def root(x):  [used as root]
+  - L9-10     def unused_json_user():
+external: json, math

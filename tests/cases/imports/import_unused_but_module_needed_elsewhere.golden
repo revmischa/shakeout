@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  - L1        import lib
+  + L2        from helper import twice  [used as twice]
+  + L4        print(twice(1))  [root: expr statement at module level]
+module helper [helper.py] bundled
+  + L1        from lib import one  [used as one]
+  + L4-5      def twice(x):  [used as twice]
+module lib [lib.py] bundled
+  + L1-2      def one():  [used as one]

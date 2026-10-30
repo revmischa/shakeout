@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        from lib import counter  [used as counter]
+  + L3        c = counter()  [root: initializer 'counter()' may have side effects]
+  + L4        c()  [root: expr statement at module level]
+  + L5        print(c())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  - L1        count = 100
+  + L4-12     def counter():  [used as counter]

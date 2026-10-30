@@ -1,0 +1,10 @@
+module __main__ [main.py] bundled
+  + L1        import warnings  [used as warnings.simplefilter]
+  + L3        from lib import old  [used as old]
+  + L5        warnings.simplefilter("always")  [root: expr statement at module level]
+  + L6        old()  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        import warnings  [used as warnings.warn]
+  - L4-5      def unused():
+  + L8-9      def old():  [used as old]
+external: warnings

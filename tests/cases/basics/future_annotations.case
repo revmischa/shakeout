@@ -1,5 +1,5 @@
 description = "string annotations under 'from __future__ import annotations' still keep their names"
-kept = ["lib:Point", "lib:__future__"]
+kept = ["lib:Point", "lib:annotations"]
 stdout = "{'p': <class 'lib.Point'>}\n"
 === main.py
 import typing

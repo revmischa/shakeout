@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        from reg import names  [root: imports 'reg', which has side effects]
+  + L3        print(names)  [root: expr statement at module level]
+module reg [reg.py] bundled, kept whole: reg.py:3 calls vars()
+  + L1        x = 1  [whole: reg.py:3 calls vars()]
+  + L2        y = 2  [whole: reg.py:3 calls vars()]
+  + L3        names = sorted(k for k in vars() if not k.sta...  [root: initializer 'sorted((k for k in vars() if not k.st...' may have side effects]
+info: kept reg whole: reg.py:3 calls vars()

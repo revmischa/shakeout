@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from lib import f  [used as f]
+  + L3        print(f())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        DEFAULT = 7  [used as DEFAULT]
+  - L2        OTHER = 8
+  + L5-6      def f(x=DEFAULT):  [used as f]

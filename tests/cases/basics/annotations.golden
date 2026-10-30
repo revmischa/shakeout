@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        import typing  [used as typing.get_type_hints]
+  + L3        from lib import f  [used as f]
+  + L5        print(typing.get_type_hints(f))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      class Point:  [used as Point]
+  + L5-6      class Unit:  [used as Unit]
+  + L9-10     def f(p: Point) -> Unit:  [used as f]
+external: typing

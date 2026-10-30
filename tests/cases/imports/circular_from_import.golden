@@ -1,0 +1,10 @@
+module __main__ [main.py] bundled
+  + L1        import x  [used as x.X]
+  + L3        print(x.X, x.get_y())  [root: expr statement at module level]
+module x [x.py] bundled
+  + L1        X = "X"  [used as x.X]
+  + L2        from y import Y  [used as Y]
+  + L5-6      def get_y():  [used as x.get_y]
+module y [y.py] bundled
+  - L1        from x import X
+  + L3        Y = "Y"  [used as Y]

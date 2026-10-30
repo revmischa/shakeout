@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        import noisy  [root: imports 'noisy', which has side effects]
+  + L3        print("ok")  [root: expr statement at module level]
+module noisy [noisy.py] bundled
+  + L1        print("noisy loaded")  [root: expr statement at module level]
+  - L4-5      def unused():

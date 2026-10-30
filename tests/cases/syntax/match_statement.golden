@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from lib import describe  [used as describe]
+  + L3        print(describe((0, 0)), describe("x"))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        DEFAULT = "default"  [used as DEFAULT]
+  - L2        point = "global point"
+  + L5-12     def describe(v):  [used as describe]

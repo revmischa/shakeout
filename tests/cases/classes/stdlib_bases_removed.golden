@@ -1,0 +1,15 @@
+module __main__ [main.py] bundled
+  - L1        import lib
+  + L3        print("ok")  [root: expr statement at module level]
+module lib [lib.py] dropped
+  - L1        import abc
+  - L2        import enum
+  - L3        import typing
+  - L5        T = typing.TypeVar("T")
+  - L8-9      class MyError(Exception):
+  - L12-13    class Color(enum.Enum):
+  - L16-18    class Pair(typing.NamedTuple):
+  - L21-22    class Proto(typing.Protocol):
+  - L25-27    class Abstract(abc.ABC):
+  - L30-31    class Box(typing.Generic[T]):
+external: abc, enum, typing

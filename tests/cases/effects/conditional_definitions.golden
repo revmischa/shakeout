@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from lib import describe  [root: imports 'lib', which has side effects]
+  + L3        print(describe())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        import os  [used as os.sep]
+  + L3-8      if os.sep == "/":  [root: if statement at module level]
+external: os

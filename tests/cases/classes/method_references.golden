@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        from lib import C  [used as C]
+  + L3        print(C().m())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def helper():  [used as helper]
+  + L5-6      def other_helper():  [used as other_helper]
+  + L9-14     class C:  [used as C]

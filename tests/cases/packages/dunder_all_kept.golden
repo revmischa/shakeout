@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [used as lib.__all__]
+  + L3        print(lib.__all__, lib.__version__)  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        __all__ = ["f"]  [used as lib.__all__]
+  + L2        __version__ = "1.0"  [used as lib.__version__]
+  - L5-6      def f():

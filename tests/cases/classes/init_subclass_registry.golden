@@ -1,0 +1,10 @@
+module __main__ [main.py] bundled
+  + L1        import plugins  [root: imports 'plugins', which has side effects]
+  + L2        from base import Plugin  [used as Plugin.registry]
+  + L4        print(sorted(Plugin.registry))  [root: expr statement at module level]
+module base [base.py] bundled
+  + L1-6      class Plugin:  [used as Plugin.registry]
+module plugins [plugins.py] bundled
+  + L1        from base import Plugin  [used as Plugin]
+  + L4-5      class CsvPlugin(Plugin):  [root: base 'Plugin' registers subclasses (__init_subclass__/metaclass)]
+  + L8-9      class JsonPlugin(Plugin):  [root: base 'Plugin' registers subclasses (__init_subclass__/metaclass)]

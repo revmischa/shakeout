@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        from shapes import Circle  [used as Circle]
+  + L3        print(Circle().name())  [root: expr statement at module level]
+module shapes [shapes.py] bundled
+  + L1-3      class Shape:  [used as Shape]
+  + L6-7      class Circle(Shape):  [used as Circle]
+  - L10-11    class Rect(Shape):
+  - L14-15    class Square(Rect):

@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [root: imports 'lib', which has side effects]
+  + L3        print("main done")  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        import atexit  [used as atexit.register]
+  + L4-5      def bye():  [used as bye]
+  + L8        atexit.register(bye)  [root: expr statement at module level]
+external: atexit

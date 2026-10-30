@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        import importlib  [used as importlib.import_module]
+  + L2        import sys  [used as sys.argv]
+  + L4        importlib.import_module(sys.argv[1]).run()  [root: expr statement at module level]
+module target_mod [target_mod.py] bundled
+  + L1-2      def run():  [whole: keep option target_mod]
+external: importlib, sys
+warning: dynamic import at main.py:4: the module name is computed at runtime; list possible modules in the keep option

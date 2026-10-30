@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        from lib import Config  [used as Config]
+  + L3        print(Config("x"))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        from dataclasses import dataclass, field  [used as dataclass]
+  + L4-7      @dataclass  [used as Config]
+  - L10-12    @dataclass
+external: dataclasses

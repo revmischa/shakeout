@@ -1,0 +1,15 @@
+module __main__ [main.py] bundled
+  - L1        import lib
+  + L3        print("ok")  [root: expr statement at module level]
+module lib [lib.py] dropped
+  - L1        import collections
+  - L2        import logging
+  - L3        import re
+  - L4        import typing
+  - L6        T = typing.TypeVar("T")
+  - L7        Pair = collections.namedtuple("Pair", "a b")
+  - L8        PAT = re.compile(r"\d+")
+  - L9        FS = frozenset({1, 2})
+  - L10       log = logging.getLogger(__name__)
+  - L11       P2 = typing.NamedTuple("P2", [("x", int)])
+external: collections, logging, re, typing

@@ -11,7 +11,9 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-_FRAME = re.compile(r'^  File "(?P<file>[^"]+)", line (?P<line>\d+)(?:, in (?P<func>.*))?$')
+_FRAME = re.compile(
+    r'^(?P<lead>[ |+\-]*)File "(?P<file>[^"]+)", line (?P<line>\d+)(?:, in (?P<func>.*))?$'
+)
 
 
 def _is_machinery(filename: str, runtime_files: Iterable[str]) -> bool:
@@ -29,19 +31,21 @@ def normalize_stderr(
     runtime = [str(f) for f in runtime_files]
     out: list[str] = []
     skipping = False
+    lead = ""
     for raw in stderr.splitlines():
         line = raw
         for prefix in prefixes:
             line = line.replace(prefix, "")
         match = _FRAME.match(line)
         if match:
+            lead = match.group("lead")
             original_file = match.group("file")
             skipping = _is_machinery(original_file, runtime) or any(
                 raw.find(f'"{r}"') != -1 for r in runtime
             )
             if skipping:
                 continue
-        elif skipping and line.startswith("    "):
+        elif skipping and line.startswith(lead + "  "):
             continue  # source/caret lines of a dropped frame
         else:
             skipping = False

@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        from lib import a  [used as a]
+  + L3        print(a())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def a():  [used as a]
+  + L5-6      def b():  [used as b]
+  + L9-10     def c():  [used as c]
+  - L13-14    def d():
+  - L17-18    def e():

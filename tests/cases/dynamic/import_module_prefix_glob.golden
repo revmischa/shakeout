@@ -1,0 +1,11 @@
+module __main__ [main.py] bundled
+  + L1        import importlib  [used as importlib.import_module]
+  + L2        import sys  [used as sys.argv]
+  + L4        importlib.import_module("plugins." + sys.argv...  [root: expr statement at module level]
+module plugins [plugins/__init__.py] bundled
+module plugins.alpha [plugins/alpha.py] bundled
+  + L1-2      def run():  [whole: module object used as a value (plugins.alpha) at __main__@L4-L4]
+module plugins.beta [plugins/beta.py] bundled
+  + L1-2      def run():  [whole: module object used as a value (plugins.beta) at __main__@L4-L4]
+external: importlib, sys
+warning: dynamic import at main.py:4: bundling every module under 'plugins'

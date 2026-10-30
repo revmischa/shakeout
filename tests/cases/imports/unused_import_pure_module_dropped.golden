@@ -1,0 +1,5 @@
+module __main__ [main.py] bundled
+  - L1        from heavy import big
+  + L3        print("ok")  [root: expr statement at module level]
+module heavy [heavy.py] dropped
+  - L1-2      def big():

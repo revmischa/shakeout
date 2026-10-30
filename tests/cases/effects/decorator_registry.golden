@@ -1,0 +1,12 @@
+module __main__ [main.py] bundled
+  + L1        import handlers  [root: imports 'handlers', which has side effects]
+  + L2        from registry import REGISTRY  [used as REGISTRY]
+  + L4        print(sorted(REGISTRY))  [root: expr statement at module level]
+  + L5        REGISTRY["on_start"]()  [root: expr statement at module level]
+module handlers [handlers.py] bundled
+  + L1        from registry import register  [used as register]
+  + L4-6      @register  [root: decorator 'register' may have side effects]
+  + L9-11     @register  [root: decorator 'register' may have side effects]
+module registry [registry.py] bundled
+  + L1        REGISTRY = {}  [used as REGISTRY]
+  + L4-6      def register(fn):  [used as register]

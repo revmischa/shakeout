@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  - L1        from typing import TYPE_CHECKING
+  - L3-4      if TYPE_CHECKING:
+  + L7-8      def f(x: "Big") -> None:  [used as f]
+  + L11       f(None)  [root: expr statement at module level]
+module typesonly [typesonly.py] dropped
+  - L1        print("SHOULD NOT PRINT")
+  - L4-5      class Big:
+external: typing

@@ -1,0 +1,6 @@
+module __main__ [main.py] bundled
+  + L1        print("main", __name__)  [root: expr statement at module level]
+  + L2-3      if __name__ == "__main__":  [root: entry __main__ block]
+module main [main.py] bundled
+  + L1        print("main", __name__)  [root: expr statement at module level]
+  - L2-3      if __name__ == "__main__":  [dead: not the entry module]

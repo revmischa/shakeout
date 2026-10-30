@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        import importlib  [used as importlib.import_module]
+  + L3        mod = importlib.import_module("plugins.alpha")  [root: initializer "importlib.import_module('plugins.alpha')" may have side effects]
+  + L4        mod.run()  [root: expr statement at module level]
+module plugins [plugins/__init__.py] bundled
+module plugins.alpha [plugins/alpha.py] bundled
+  + L1-2      def helper():  [whole: module object used as a value (plugins.alpha) at __main__@L3-L3]
+  + L5-6      def run():  [whole: module object used as a value (plugins.alpha) at __main__@L3-L3]
+external: importlib

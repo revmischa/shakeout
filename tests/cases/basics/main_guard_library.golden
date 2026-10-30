@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  + L1        import lib  [used as lib.f]
+  + L3        lib.f()  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def f():  [used as lib.f]
+  - L5-7      def selftest():
+  - L10-11    if __name__ == "__main__":  [dead: not the entry module]

@@ -1,0 +1,10 @@
+module __main__ [main.py] bundled
+  + L1        import sys  [used as sys.argv]
+  + L3        from cmds import dispatch  [used as dispatch]
+  + L5        dispatch(sys.argv[1])  [root: expr statement at module level]
+module cmds [cmds.py] bundled, kept whole: cmds.py:10 calls globals()
+  + L1-2      def cmd_hello():  [whole: cmds.py:10 calls globals()]
+  + L5-6      def cmd_bye():  [whole: cmds.py:10 calls globals()]
+  + L9-10     def dispatch(name):  [used as dispatch]
+external: sys
+info: kept cmds whole: cmds.py:10 calls globals()

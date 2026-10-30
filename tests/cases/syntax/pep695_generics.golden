@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        from lib import first  [used as first]
+  + L3        print(first([1, 2]))  [root: expr statement at module level]
+module lib [lib.py] bundled
+  - L1        type Pair[T] = tuple[T, T]
+  - L2        type Unused = int
+  + L5-6      def first[T](xs: list[T]) -> T:  [used as first]
+  - L9        def _uses_pair(p: Pair[int]) -> None: ...
+  - L12       x: Pair[int] = (1, 1)

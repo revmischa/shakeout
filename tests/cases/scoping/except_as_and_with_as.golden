@@ -1,0 +1,9 @@
+module __main__ [main.py] bundled
+  + L1        from lib import f  [used as f]
+  + L3        print(f())  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        import io  [used as io.StringIO]
+  - L3        err = "global err"
+  - L4        fh = "global fh"
+  + L7-12     def f():  [used as f]
+external: io

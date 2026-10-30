@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled
+  + L1        import sys  [used as sys.argv]
+  + L3        import ops  [used as ops]
+  + L5        print(getattr(ops, sys.argv[1])(3, 2))  [root: expr statement at module level]
+module ops [ops.py] bundled
+  + L1-2      def add(a, b):  [whole: module object used as a value (ops) at __main__@L5-L5]
+  + L5-6      def sub(a, b):  [whole: module object used as a value (ops) at __main__@L5-L5]
+external: sys
