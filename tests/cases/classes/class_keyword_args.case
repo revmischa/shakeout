@@ -1,0 +1,18 @@
+description = "class keyword arguments are passed to __init_subclass__ and keep the class"
+kept = ["lib:Tagged"]
+stdout = "['x']\n"
+=== main.py
+from lib import Base, TAGS
+
+print(TAGS)
+=== lib.py
+TAGS = []
+
+
+class Base:
+    def __init_subclass__(cls, tag=None):
+        TAGS.append(tag)
+
+
+class Tagged(Base, tag="x"):
+    pass

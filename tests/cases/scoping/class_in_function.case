@@ -1,0 +1,17 @@
+description = "classes defined inside functions reference module globals correctly"
+kept = ["lib:BASE_NAME"]
+stdout = "base-inner\n"
+=== main.py
+from lib import make
+
+print(make())
+=== lib.py
+BASE_NAME = "base"
+
+
+def make():
+    class Inner:
+        def name(self):
+            return BASE_NAME + "-inner"
+
+    return Inner().name()

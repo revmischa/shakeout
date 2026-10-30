@@ -1,0 +1,12 @@
+description = "try/except ImportError fallbacks are kept as-is"
+kept = ["compat:loads"]
+stdout = "{'a': 1}\n"
+=== main.py
+from compat import loads
+
+print(loads('{"a": 1}'))
+=== compat.py
+try:
+    from ujson_not_installed import loads
+except ImportError:
+    from json import loads

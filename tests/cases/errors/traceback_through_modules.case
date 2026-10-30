@@ -1,0 +1,33 @@
+description = "a traceback through three bundled modules matches the original frame by frame"
+exit_code = 1
+=== main.py
+from a import go
+
+go()
+=== a.py
+from b import step
+
+
+def unused_a():
+    pass
+
+
+def go():
+    step(1)
+=== b.py
+from c import fail
+
+
+def unused_b():
+    pass
+
+
+def step(n):
+    return fail(n + 1)
+=== c.py
+def unused_c():
+    pass
+
+
+def fail(n):
+    return {"k": n}["missing"]

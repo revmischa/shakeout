@@ -1,0 +1,15 @@
+description = "if/else at module level is kept as a whole"
+stdout = "posix-ish\n"
+=== main.py
+from lib import describe
+
+print(describe())
+=== lib.py
+import os
+
+if os.sep == "/":
+    def describe():
+        return "posix-ish"
+else:
+    def describe():
+        return "other"

@@ -1,0 +1,14 @@
+description = "walrus inside a comprehension binds in the enclosing function scope"
+removed = ["lib:last"]
+stdout = "3\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+last = "global"
+
+
+def f():
+    [last := n for n in (1, 2, 3)]
+    return last

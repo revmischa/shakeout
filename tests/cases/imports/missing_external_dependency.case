@@ -1,0 +1,6 @@
+description = "an import of a module that does not exist fails identically in the bundle"
+exit_code = 1
+=== main.py
+import lib
+=== lib.py
+import definitely_not_a_module_xyz

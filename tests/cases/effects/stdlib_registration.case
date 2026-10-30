@@ -1,0 +1,15 @@
+description = "atexit/signal-style registrations are side effects and kept"
+stdout = "main done\nbye\n"
+=== main.py
+import lib
+
+print("main done")
+=== lib.py
+import atexit
+
+
+def bye():
+    print("bye")
+
+
+atexit.register(bye)

@@ -1,0 +1,17 @@
+description = "unreferenced definitions in the entry script itself are removed"
+removed = ["__main__:helper_unused", "__main__:UNUSED"]
+kept = ["__main__:helper"]
+stdout = "3\n"
+=== main.py
+UNUSED = 42
+
+
+def helper(a, b):
+    return a + b
+
+
+def helper_unused():
+    return 0
+
+
+print(helper(1, 2))

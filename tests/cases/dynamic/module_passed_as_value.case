@@ -1,0 +1,19 @@
+description = "passing a module object to a function keeps the whole module"
+kept = ["mod:a", "mod:b"]
+stdout = "['a', 'b']\n"
+=== main.py
+import mod
+
+
+def names(m):
+    return sorted(n for n in vars(m) if not n.startswith("_"))
+
+
+print(names(mod))
+=== mod.py
+def a():
+    pass
+
+
+def b():
+    pass

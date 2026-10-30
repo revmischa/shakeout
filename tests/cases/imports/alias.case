@@ -1,0 +1,20 @@
+description = "import ... as and from ... import ... as resolve to the right definitions"
+kept = ["lib:f", "lib:g"]
+removed = ["lib:h"]
+stdout = "fg\n"
+=== main.py
+import lib as L
+from lib import g as gee
+
+print(L.f() + gee())
+=== lib.py
+def f():
+    return "f"
+
+
+def g():
+    return "g"
+
+
+def h():
+    return "h"

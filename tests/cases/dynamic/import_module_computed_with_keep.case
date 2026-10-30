@@ -1,0 +1,13 @@
+description = "keep = ['module'] makes a dynamically imported module available"
+options = { keep = ["target_mod"] }
+argv = ["target_mod"]
+stdout = "target\n"
+warnings = ["dynamic import"]
+=== main.py
+import importlib
+import sys
+
+importlib.import_module(sys.argv[1]).run()
+=== target_mod.py
+def run():
+    print("target")

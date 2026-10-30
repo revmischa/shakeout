@@ -1,0 +1,22 @@
+description = "globals referenced from methods (any method) of a kept class are kept"
+kept = ["lib:helper", "lib:other_helper"]
+stdout = "h\n"
+=== main.py
+from lib import C
+
+print(C().m())
+=== lib.py
+def helper():
+    return "h"
+
+
+def other_helper():
+    return "o"
+
+
+class C:
+    def m(self):
+        return helper()
+
+    def never_called(self):
+        return other_helper()

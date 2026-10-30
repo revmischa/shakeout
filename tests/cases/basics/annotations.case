@@ -1,0 +1,20 @@
+description = "names used only in annotations of kept code are kept (annotations can be evaluated at runtime)"
+kept = ["lib:Point", "lib:Unit"]
+stdout = "{'p': <class 'lib.Point'>, 'return': <class 'lib.Unit'>}\n"
+=== main.py
+import typing
+
+from lib import f
+
+print(typing.get_type_hints(f))
+=== lib.py
+class Point:
+    pass
+
+
+class Unit:
+    pass
+
+
+def f(p: Point) -> Unit:
+    return Unit()

@@ -1,0 +1,17 @@
+description = "importlib.import_module with a constant name is followed and that module is kept whole"
+bundled_modules = ["plugins.alpha"]
+kept = ["plugins.alpha:run", "plugins.alpha:helper"]
+stdout = "alpha\n"
+=== main.py
+import importlib
+
+mod = importlib.import_module("plugins.alpha")
+mod.run()
+=== plugins/__init__.py
+=== plugins/alpha.py
+def helper():
+    return "alpha"
+
+
+def run():
+    print(helper())

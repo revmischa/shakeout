@@ -1,0 +1,9 @@
+description = "module docstrings are kept (__doc__ is observable)"
+stdout = "Entry docs. lib docs.\n"
+=== main.py
+"""Entry docs."""
+import lib
+
+print(__doc__, lib.__doc__)
+=== lib.py
+"""lib docs."""

@@ -1,0 +1,11 @@
+description = "a module imported only for a binding nobody uses, with no side effects, is not shipped"
+dropped_modules = ["heavy"]
+removed = ["heavy:big"]
+stdout = "ok\n"
+=== main.py
+from heavy import big
+
+print("ok")
+=== heavy.py
+def big():
+    return [0] * 10

@@ -1,0 +1,13 @@
+description = "a parameter with a global's name does not keep the global"
+removed = ["lib:x"]
+stdout = "5\n"
+=== main.py
+from lib import f
+
+print(f(5))
+=== lib.py
+x = 1
+
+
+def f(x):
+    return x

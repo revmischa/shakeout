@@ -1,0 +1,17 @@
+description = "a module object used as a value (getattr with computed name) keeps the whole module"
+kept = ["ops:add", "ops:sub"]
+argv = ["sub"]
+stdout = "1\n"
+=== main.py
+import sys
+
+import ops
+
+print(getattr(ops, sys.argv[1])(3, 2))
+=== ops.py
+def add(a, b):
+    return a + b
+
+
+def sub(a, b):
+    return a - b

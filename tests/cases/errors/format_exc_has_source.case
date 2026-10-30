@@ -1,0 +1,15 @@
+description = "logging.exception and traceback.format_exc show source lines from the bundle"
+stdout = "ZeroDivisionError True\n"
+=== main.py
+import traceback
+
+from lib import divide
+
+try:
+    divide(1, 0)
+except ZeroDivisionError:
+    text = traceback.format_exc()
+    print("ZeroDivisionError", "return a / b" in text)
+=== lib.py
+def divide(a, b):
+    return a / b

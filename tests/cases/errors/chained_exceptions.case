@@ -1,0 +1,16 @@
+description = "chained exceptions (raise from, implicit context) render identically"
+exit_code = 1
+=== main.py
+from lib import outer
+
+outer()
+=== lib.py
+def inner():
+    raise KeyError("inner")
+
+
+def outer():
+    try:
+        inner()
+    except KeyError as e:
+        raise RuntimeError("outer") from e

@@ -1,0 +1,14 @@
+description = "the source of a star import is kept whole"
+kept = ["stars:one", "stars:two"]
+stdout = "1\n"
+=== main.py
+from stars import *
+
+print(one())
+=== stars.py
+def one():
+    return 1
+
+
+def two():
+    return 2

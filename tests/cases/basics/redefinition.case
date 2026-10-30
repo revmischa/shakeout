@@ -1,0 +1,14 @@
+description = "a name bound twice keeps both bindings when referenced (later one wins at runtime)"
+kept = ["lib:f"]
+stdout = "second\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+def f():
+    return "first"
+
+
+def f():
+    return "second"

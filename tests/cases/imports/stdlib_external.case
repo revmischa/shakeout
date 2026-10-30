@@ -1,0 +1,18 @@
+description = "stdlib imports are left as normal imports; unused ones are dropped"
+removed = ["lib:unused_json_user"]
+stdout = "3.0\n"
+=== main.py
+from lib import root
+
+print(root(9))
+=== lib.py
+import json
+import math
+
+
+def root(x):
+    return math.sqrt(x)
+
+
+def unused_json_user():
+    return json.dumps({})

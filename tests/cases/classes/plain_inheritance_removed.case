@@ -1,0 +1,24 @@
+description = "subclasses of ordinary bases are removable when unused"
+removed = ["shapes:Square", "shapes:Rect"]
+kept = ["shapes:Shape", "shapes:Circle"]
+stdout = "circle\n"
+=== main.py
+from shapes import Circle
+
+print(Circle().name())
+=== shapes.py
+class Shape:
+    def name(self):
+        return type(self).__name__.lower()
+
+
+class Circle(Shape):
+    pass
+
+
+class Rect(Shape):
+    pass
+
+
+class Square(Rect):
+    pass

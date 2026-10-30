@@ -1,0 +1,27 @@
+description = "decorator factories (route(...)) are treated as side-effecting"
+kept = ["app:index", "app:about"]
+stdout = "['/', '/about']\n"
+=== main.py
+import app
+
+print(sorted(app.ROUTES))
+=== app.py
+ROUTES = {}
+
+
+def route(path):
+    def deco(fn):
+        ROUTES[path] = fn
+        return fn
+
+    return deco
+
+
+@route("/")
+def index():
+    return "home"
+
+
+@route("/about")
+def about():
+    return "about"

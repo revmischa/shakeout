@@ -1,0 +1,27 @@
+description = "dependencies of kept code are kept transitively, nothing else"
+removed = ["lib:d", "lib:e"]
+kept = ["lib:a", "lib:b", "lib:c"]
+stdout = "abc\n"
+=== main.py
+from lib import a
+
+print(a())
+=== lib.py
+def a():
+    return "a" + b()
+
+
+def b():
+    return "b" + c()
+
+
+def c():
+    return "c"
+
+
+def d():
+    return e()
+
+
+def e():
+    return "e"

@@ -1,0 +1,13 @@
+description = "except* and ExceptionGroup tracebacks"
+min_python = "3.11"
+exit_code = 1
+=== main.py
+from lib import run
+
+try:
+    run()
+except* ValueError as eg:
+    print("values", len(eg.exceptions))
+=== lib.py
+def run():
+    raise ExceptionGroup("many", [ValueError(1), ValueError(2), TypeError(3)])

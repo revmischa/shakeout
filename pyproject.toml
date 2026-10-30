@@ -1,0 +1,39 @@
+[project]
+name = "shakeout"
+version = "0.1.0.dev0"
+description = "Static tree-shaking bundler for Python"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+shakeout = "shakeout.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["tomli>=2; python_version<'3.11'", "pytest>=8", "hypothesis>=6", "ruff>=0.6", "pyright>=1.1.380", "pytest-xdist>=3"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "nightly: slow tier (corpus, long fuzz); run with -m nightly",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = ["tests/cases"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.pyright]
+include = ["src"]
+typeCheckingMode = "strict"
+pythonVersion = "3.10"

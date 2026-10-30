@@ -1,0 +1,12 @@
+description = "__name__, __package__ and __spec__.name of bundled modules match the original"
+stdout = "pkg.mod pkg pkg.mod True\n"
+=== main.py
+from pkg import mod
+
+print(mod.NAME, mod.PKG, mod.SPEC, mod.IS_FILE_SET)
+=== pkg/__init__.py
+=== pkg/mod.py
+NAME = __name__
+PKG = __package__
+SPEC = __spec__.name
+IS_FILE_SET = __file__.endswith("mod.py")

@@ -1,0 +1,19 @@
+description = "known-pure factory calls (TypeVar, namedtuple, re.compile, frozenset, ...) are removable"
+removed = ["lib:T", "lib:Pair", "lib:PAT", "lib:FS", "lib:log", "lib:P2"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+import collections
+import logging
+import re
+import typing
+
+T = typing.TypeVar("T")
+Pair = collections.namedtuple("Pair", "a b")
+PAT = re.compile(r"\d+")
+FS = frozenset({1, 2})
+log = logging.getLogger(__name__)
+P2 = typing.NamedTuple("P2", [("x", int)])

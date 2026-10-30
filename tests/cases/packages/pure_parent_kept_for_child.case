@@ -1,0 +1,14 @@
+description = "a parent package is shipped (possibly empty) whenever a child module is"
+bundled_modules = ["pkg", "pkg.child"]
+removed = ["pkg:unused"]
+stdout = "c\n"
+=== main.py
+from pkg.child import c
+
+print(c())
+=== pkg/__init__.py
+def unused():
+    return 1
+=== pkg/child.py
+def c():
+    return "c"

@@ -1,0 +1,15 @@
+description = "inspect.getsource works for bundled functions"
+stdout = "def f():\n    return 1\n\n"
+=== main.py
+import inspect
+
+from lib import f
+
+print(inspect.getsource(f))
+=== lib.py
+def unused():
+    pass
+
+
+def f():
+    return 1

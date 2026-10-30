@@ -1,0 +1,16 @@
+description = "a class-body name does not shadow the module global inside methods"
+kept = ["lib:x"]
+stdout = "global\n"
+=== main.py
+from lib import C
+
+print(C().m())
+=== lib.py
+x = "global"
+
+
+class C:
+    x = "class"
+
+    def m(self):
+        return x

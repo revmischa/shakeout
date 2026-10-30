@@ -1,0 +1,16 @@
+description = "assume_pure_bases lets classes with unknown bases be removed"
+options = { assume_pure_bases = true }
+removed = ["lib:Mine"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+import os
+
+Base = os.PathLike
+
+
+class Mine(Base):
+    pass

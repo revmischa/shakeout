@@ -1,0 +1,22 @@
+description = "async functions, async generators and awaits"
+kept = ["lib:fetch", "lib:gen"]
+removed = ["lib:unused_coro"]
+stdout = "[1, 2] done\n"
+=== main.py
+import asyncio
+
+from lib import fetch
+
+print(*asyncio.run(fetch()))
+=== lib.py
+async def gen():
+    for i in (1, 2):
+        yield i
+
+
+async def fetch():
+    return [i async for i in gen()], "done"
+
+
+async def unused_coro():
+    pass

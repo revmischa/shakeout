@@ -1,0 +1,13 @@
+description = "a name assigned anywhere in a function is local everywhere in it (UnboundLocalError matches)"
+exit_code = 1
+=== main.py
+from lib import f
+
+f()
+=== lib.py
+y = 1
+
+
+def f():
+    print(y)
+    y = 2

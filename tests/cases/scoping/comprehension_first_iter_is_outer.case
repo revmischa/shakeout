@@ -1,0 +1,13 @@
+description = "the first iterable of a comprehension is evaluated in the enclosing scope"
+kept = ["lib:x"]
+stdout = "[1, 2]\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+x = [1, 2]
+
+
+def f():
+    return [x for x in x]

@@ -1,0 +1,15 @@
+description = "module.attr access keeps only the attributes used"
+kept = ["util:used"]
+removed = ["util:unused"]
+stdout = "1\n"
+=== main.py
+import util
+
+print(util.used())
+=== util.py
+def used():
+    return 1
+
+
+def unused():
+    return 2

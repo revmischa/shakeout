@@ -1,0 +1,15 @@
+description = "a function writing a module global via 'global' keeps that binding alive"
+kept = ["lib:init", "lib:STATE"]
+stdout = "ready\n"
+=== main.py
+import lib
+
+lib.init()
+print(lib.STATE)
+=== lib.py
+STATE = None
+
+
+def init():
+    global STATE
+    STATE = "ready"

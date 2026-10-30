@@ -1,0 +1,14 @@
+description = "package __init__ runs before submodules, in the original order"
+stdout = "pkg init\nsub init\nf\n"
+=== main.py
+from pkg.sub import f
+
+print(f())
+=== pkg/__init__.py
+print("pkg init")
+=== pkg/sub.py
+print("sub init")
+
+
+def f():
+    return "f"

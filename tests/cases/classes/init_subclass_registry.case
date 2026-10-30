@@ -1,0 +1,25 @@
+description = "subclasses of a class with __init_subclass__ are kept: defining them registers them"
+kept = ["plugins:CsvPlugin", "plugins:JsonPlugin", "base:Plugin"]
+stdout = "['csv', 'json']\n"
+=== main.py
+import plugins
+from base import Plugin
+
+print(sorted(Plugin.registry))
+=== base.py
+class Plugin:
+    registry = {}
+
+    def __init_subclass__(cls, **kw):
+        super().__init_subclass__(**kw)
+        Plugin.registry[cls.__name__.removesuffix("Plugin").lower()] = cls
+=== plugins.py
+from base import Plugin
+
+
+class CsvPlugin(Plugin):
+    pass
+
+
+class JsonPlugin(Plugin):
+    pass

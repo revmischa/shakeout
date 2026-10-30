@@ -1,0 +1,21 @@
+description = "a module that calls globals() is kept whole"
+kept = ["cmds:cmd_hello", "cmds:cmd_bye"]
+argv = ["bye"]
+stdout = "bye\n"
+=== main.py
+import sys
+
+from cmds import dispatch
+
+dispatch(sys.argv[1])
+=== cmds.py
+def cmd_hello():
+    print("hello")
+
+
+def cmd_bye():
+    print("bye")
+
+
+def dispatch(name):
+    globals()["cmd_" + name]()

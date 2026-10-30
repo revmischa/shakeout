@@ -1,0 +1,16 @@
+description = "from pkg import submodule binds the submodule; its used attributes are kept"
+kept = ["pkg.sub:f"]
+removed = ["pkg.sub:g"]
+stdout = "f\n"
+=== main.py
+from pkg import sub
+
+print(sub.f())
+=== pkg/__init__.py
+=== pkg/sub.py
+def f():
+    return "f"
+
+
+def g():
+    return "g"

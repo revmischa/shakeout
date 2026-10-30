@@ -1,0 +1,25 @@
+description = "imports inside functions are followed when the function is kept"
+kept = ["lazy:compute"]
+removed = ["lazy:other", "__main__:never"]
+stdout = "42\n"
+=== main.py
+def run():
+    from lazy import compute
+
+    return compute()
+
+
+def never():
+    import lazy
+
+    return lazy.other()
+
+
+print(run())
+=== lazy.py
+def compute():
+    return 42
+
+
+def other():
+    return 0

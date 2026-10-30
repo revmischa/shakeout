@@ -1,0 +1,15 @@
+description = "namespace packages (no __init__.py) are supported"
+kept = ["ns.mod:f"]
+removed = ["ns.mod:g"]
+stdout = "ns\n"
+=== main.py
+from ns.mod import f
+
+print(f())
+=== ns/mod.py
+def f():
+    return "ns"
+
+
+def g():
+    pass

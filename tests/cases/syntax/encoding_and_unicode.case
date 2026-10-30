@@ -1,0 +1,15 @@
+description = "non-ASCII identifiers and strings survive bundling"
+kept = ["lib:grüß"]
+removed = ["lib:ungenutzt"]
+stdout = "grüß dich 🌍\n"
+=== main.py
+from lib import grüß
+
+print(grüß())
+=== lib.py
+def grüß():
+    return "grüß dich 🌍"
+
+
+def ungenutzt():
+    return "ü"

@@ -1,0 +1,8 @@
+description = "__import__ with a constant name is followed"
+bundled_modules = ["target"]
+stdout = "t\n"
+=== main.py
+m = __import__("target")
+print(m.T)
+=== target.py
+T = "t"

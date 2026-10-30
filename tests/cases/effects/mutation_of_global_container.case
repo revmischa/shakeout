@@ -1,0 +1,10 @@
+description = "module-level mutation of a container keeps the container and the mutation"
+kept = ["lib:ITEMS"]
+stdout = "[1, 2, 3]\n"
+=== main.py
+from lib import ITEMS
+
+print(ITEMS)
+=== lib.py
+ITEMS = [1, 2]
+ITEMS.append(3)

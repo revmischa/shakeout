@@ -1,0 +1,17 @@
+description = "import_module('pkg.' + x) includes every module under pkg (like esbuild's glob imports) with a warning"
+warnings = ["dynamic import"]
+bundled_modules = ["plugins.alpha", "plugins.beta"]
+argv = ["beta"]
+stdout = "beta\n"
+=== main.py
+import importlib
+import sys
+
+importlib.import_module("plugins." + sys.argv[1]).run()
+=== plugins/__init__.py
+=== plugins/alpha.py
+def run():
+    print("alpha")
+=== plugins/beta.py
+def run():
+    print("beta")

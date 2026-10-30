@@ -1,0 +1,13 @@
+description = "a statement that mutates another module's state is a side effect"
+stdout = "patched\n"
+=== main.py
+import config
+import patcher
+
+print(config.MODE)
+=== config.py
+MODE = "default"
+=== patcher.py
+import config
+
+config.MODE = "patched"

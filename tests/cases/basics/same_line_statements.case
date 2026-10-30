@@ -1,0 +1,11 @@
+description = "statements sharing a line are kept or removed together"
+kept = ["lib:a", "lib:b"]
+removed = ["lib:c"]
+stdout = "1\n"
+=== main.py
+from lib import a
+
+print(a)
+=== lib.py
+a = 1; b = 2
+c = 3

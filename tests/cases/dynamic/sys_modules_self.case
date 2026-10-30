@@ -1,0 +1,21 @@
+description = "a module that touches sys.modules is kept whole"
+kept = ["selfref:a", "selfref:b"]
+stdout = "b\n"
+=== main.py
+import selfref
+
+print(selfref.pick("b"))
+=== selfref.py
+import sys
+
+
+def a():
+    return "a"
+
+
+def b():
+    return "b"
+
+
+def pick(name):
+    return getattr(sys.modules[__name__], name)()

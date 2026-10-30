@@ -1,0 +1,31 @@
+description = "classes created through a metaclass are kept (the metaclass may register them)"
+kept = ["models:User", "models:Order"]
+stdout = "['Order', 'User']\n"
+=== main.py
+import models
+from meta import Meta
+
+print(sorted(Meta.created))
+=== meta.py
+class Meta(type):
+    created = []
+
+    def __new__(mcls, name, bases, ns):
+        cls = super().__new__(mcls, name, bases, ns)
+        if bases:
+            Meta.created.append(name)
+        return cls
+
+
+class Model(metaclass=Meta):
+    pass
+=== models.py
+from meta import Model
+
+
+class User(Model):
+    pass
+
+
+class Order(Model):
+    pass

@@ -1,0 +1,22 @@
+description = "modules that read data via __file__ are kept but flagged with a warning"
+warnings = ["__file__"]
+equivalent = false
+bundle_exit_code = 1
+soundness = true
+targets = ["single"]
+stdout = "hello data\n"
+=== main.py
+import os
+
+import lib
+
+print(lib.read())
+=== lib.py
+import os
+
+
+def read():
+    with open(os.path.join(os.path.dirname(__file__), "data.txt")) as fh:
+        return fh.read().strip()
+=== data.txt
+hello data

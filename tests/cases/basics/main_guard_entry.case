@@ -1,0 +1,10 @@
+description = "the entry's own __main__ block is a root"
+kept = ["__main__:main"]
+stdout = "main\n"
+=== main.py
+def main():
+    print("main")
+
+
+if __name__ == "__main__":
+    main()

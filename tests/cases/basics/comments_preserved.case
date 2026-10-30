@@ -1,0 +1,15 @@
+description = "comments inside kept code survive; tracebacks keep original line numbers"
+exit_code = 1
+=== main.py
+from lib import fail
+
+fail()
+=== lib.py
+# leading comment for unused
+def unused():
+    return 1
+
+
+def fail():
+    # explain the failure
+    raise RuntimeError("boom")

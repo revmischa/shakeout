@@ -1,0 +1,19 @@
+description = "string annotations under 'from __future__ import annotations' still keep their names"
+kept = ["lib:Point", "lib:__future__"]
+stdout = "{'p': <class 'lib.Point'>}\n"
+=== main.py
+import typing
+
+from lib import f
+
+print(typing.get_type_hints(f))
+=== lib.py
+from __future__ import annotations
+
+
+class Point:
+    pass
+
+
+def f(p: Point):
+    return p

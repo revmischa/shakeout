@@ -1,0 +1,20 @@
+description = "except ... as and with ... as bind locals"
+removed = ["lib:err", "lib:fh"]
+stdout = "caught io\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+import io
+
+err = "global err"
+fh = "global fh"
+
+
+def f():
+    with io.StringIO("io") as fh:
+        try:
+            raise ValueError(fh.getvalue())
+        except ValueError as err:
+            return "caught " + str(err)

@@ -1,0 +1,14 @@
+description = "a comprehension variable is local to the comprehension; a later read in the function is global"
+kept = ["lib:i"]
+stdout = "[0, 1] 99\n"
+=== main.py
+from lib import f
+
+print(*f())
+=== lib.py
+i = 99
+
+
+def f():
+    xs = [i for i in range(2)]
+    return xs, i

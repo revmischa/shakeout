@@ -1,0 +1,27 @@
+description = "self- and mutually-recursive functions are kept when reached, removed when not"
+removed = ["lib:ping2", "lib:pong2"]
+kept = ["lib:fact", "lib:even", "lib:odd"]
+stdout = "120 True\n"
+=== main.py
+from lib import fact, even
+
+print(fact(5), even(10))
+=== lib.py
+def fact(n):
+    return 1 if n <= 1 else n * fact(n - 1)
+
+
+def even(n):
+    return n == 0 or odd(n - 1)
+
+
+def odd(n):
+    return n != 0 and even(n - 1)
+
+
+def ping2(n):
+    return pong2(n)
+
+
+def pong2(n):
+    return ping2(n)

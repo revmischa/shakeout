@@ -1,0 +1,14 @@
+description = "builtins that call user callbacks (sorted key=...) are not assumed pure"
+kept = ["lib:ORDER", "lib:noisy_key"]
+stdout = "key\nkey\nok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+def noisy_key(x):
+    print("key")
+    return x
+
+
+ORDER = sorted([2, 1], key=noisy_key)

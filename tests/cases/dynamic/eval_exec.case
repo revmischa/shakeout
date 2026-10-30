@@ -1,0 +1,14 @@
+description = "a module that uses eval/exec is kept whole"
+kept = ["calc:double"]
+stdout = "8\n"
+=== main.py
+from calc import run
+
+print(run("double(4)"))
+=== calc.py
+def double(x):
+    return 2 * x
+
+
+def run(expr):
+    return eval(expr)

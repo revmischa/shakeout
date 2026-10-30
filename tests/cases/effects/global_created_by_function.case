@@ -1,0 +1,12 @@
+description = "a global created only inside a function via 'global' resolves to that function"
+kept = ["lib:setup"]
+stdout = "created\n"
+=== main.py
+import lib
+
+lib.setup()
+print(lib.CREATED)
+=== lib.py
+def setup():
+    global CREATED
+    CREATED = "created"

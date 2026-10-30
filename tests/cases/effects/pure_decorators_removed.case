@@ -1,0 +1,36 @@
+description = "functions with only known-pure decorators are removable"
+removed = ["lib:cached", "lib:wrapped", "lib:Plain", "lib:ctx"]
+kept = ["lib:used"]
+stdout = "1\n"
+=== main.py
+from lib import used
+
+print(used())
+=== lib.py
+import contextlib
+import functools
+from dataclasses import dataclass
+
+
+@functools.lru_cache(maxsize=None)
+def cached(x):
+    return x
+
+
+@functools.cache
+def wrapped(x):
+    return x
+
+
+@dataclass(frozen=True)
+class Plain:
+    x: int = 0
+
+
+@contextlib.contextmanager
+def ctx():
+    yield
+
+
+def used():
+    return 1

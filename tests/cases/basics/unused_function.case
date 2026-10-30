@@ -1,0 +1,15 @@
+description = "an unreferenced function in another module is removed"
+removed = ["lib:unused"]
+kept = ["lib:used"]
+stdout = "used\n"
+=== main.py
+from lib import used
+
+used()
+=== lib.py
+def used():
+    print("used")
+
+
+def unused():
+    print("unused")

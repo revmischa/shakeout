@@ -1,0 +1,28 @@
+description = "circular imports keep working and both sides are shaken"
+kept = ["a:fa", "b:fb"]
+removed = ["a:ua", "b:ub"]
+stdout = "fa fb\n"
+=== main.py
+import a
+
+print(a.fa())
+=== a.py
+import b
+
+
+def fa():
+    return "fa " + b.fb()
+
+
+def ua():
+    return 1
+=== b.py
+import a
+
+
+def fb():
+    return "fb"
+
+
+def ub():
+    return a.ua()

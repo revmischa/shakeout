@@ -1,0 +1,15 @@
+description = "del of a local name makes it local"
+removed = ["lib:tmp"]
+stdout = "ok\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+tmp = "global"
+
+
+def f():
+    tmp = 1
+    del tmp
+    return "ok"

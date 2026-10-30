@@ -1,0 +1,10 @@
+description = "a PEP 562 module __getattr__ is kept and serves missing attributes"
+kept = ["lazy:__getattr__"]
+stdout = "computed:thing\n"
+=== main.py
+import lazy
+
+print(lazy.thing)
+=== lazy.py
+def __getattr__(name):
+    return f"computed:{name}"

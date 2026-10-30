@@ -1,0 +1,15 @@
+description = "names referenced in default arguments of kept functions are kept"
+kept = ["lib:DEFAULT", "lib:f"]
+removed = ["lib:OTHER"]
+stdout = "7\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+DEFAULT = 7
+OTHER = 8
+
+
+def f(x=DEFAULT):
+    return x

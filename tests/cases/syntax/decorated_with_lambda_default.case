@@ -1,0 +1,13 @@
+description = "lambdas at module level keep what they reference only when kept"
+removed = ["lib:BASE", "lib:inc"]
+kept = ["lib:dbl", "lib:FACTOR"]
+stdout = "6\n"
+=== main.py
+from lib import dbl
+
+print(dbl(3))
+=== lib.py
+BASE = 1
+FACTOR = 2
+inc = lambda x: x + BASE
+dbl = lambda x: x * FACTOR

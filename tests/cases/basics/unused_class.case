@@ -1,0 +1,17 @@
+description = "an unreferenced plain class is removed, a used one is kept"
+removed = ["shapes:Square"]
+kept = ["shapes:Circle"]
+stdout = "circle 2\n"
+=== main.py
+from shapes import Circle
+
+print("circle", Circle(2).r)
+=== shapes.py
+class Circle:
+    def __init__(self, r):
+        self.r = r
+
+
+class Square:
+    def __init__(self, s):
+        self.s = s

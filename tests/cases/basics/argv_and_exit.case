@@ -1,0 +1,9 @@
+description = "argv and exit codes pass through the bundle"
+argv = ["a", "b"]
+exit_code = 3
+stdout = "['a', 'b']\n"
+=== main.py
+import sys
+
+print(sys.argv[1:])
+sys.exit(3)

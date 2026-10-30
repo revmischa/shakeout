@@ -1,0 +1,12 @@
+description = "importing a non-stdlib external module is treated as a side effect (it may fail)"
+exit_code = 1
+=== main.py
+import wrapper
+
+print("unreachable")
+=== wrapper.py
+import not_installed_pkg_abc
+
+
+def f():
+    return not_installed_pkg_abc

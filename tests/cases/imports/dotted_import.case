@@ -1,0 +1,17 @@
+description = "import a.b.c then a.b.c.attr resolves through packages"
+kept = ["a.b.c:f"]
+removed = ["a.b.c:g"]
+stdout = "deep\n"
+=== main.py
+import a.b.c
+
+print(a.b.c.f())
+=== a/__init__.py
+=== a/b/__init__.py
+=== a/b/c.py
+def f():
+    return "deep"
+
+
+def g():
+    pass

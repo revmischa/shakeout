@@ -1,0 +1,19 @@
+description = "a function-local import binding shadows a same-named module global"
+kept = ["lib:name", "__main__:f"]
+removed = ["__main__:name"]
+stdout = "from lib\n"
+=== main.py
+def name():
+    return "global"
+
+
+def f():
+    from lib import name
+
+    return name()
+
+
+print(f())
+=== lib.py
+def name():
+    return "from lib"

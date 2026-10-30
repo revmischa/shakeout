@@ -1,0 +1,22 @@
+description = "nonlocal refers to an enclosing function, not the module"
+removed = ["lib:count"]
+stdout = "2\n"
+=== main.py
+from lib import counter
+
+c = counter()
+c()
+print(c())
+=== lib.py
+count = 100
+
+
+def counter():
+    count = 0
+
+    def inc():
+        nonlocal count
+        count += 1
+        return count
+
+    return inc

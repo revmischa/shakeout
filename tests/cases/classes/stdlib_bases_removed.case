@@ -1,0 +1,39 @@
+description = "classes with safe stdlib bases (Exception, Enum, NamedTuple, Protocol, ABC, Generic) are removable"
+removed = ["lib:MyError", "lib:Color", "lib:Pair", "lib:Proto", "lib:Abstract", "lib:Box"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+import abc
+import enum
+import typing
+
+T = typing.TypeVar("T")
+
+
+class MyError(Exception):
+    pass
+
+
+class Color(enum.Enum):
+    RED = 1
+
+
+class Pair(typing.NamedTuple):
+    a: int
+    b: int
+
+
+class Proto(typing.Protocol):
+    def f(self) -> int: ...
+
+
+class Abstract(abc.ABC):
+    @abc.abstractmethod
+    def g(self): ...
+
+
+class Box(typing.Generic[T]):
+    pass

@@ -1,0 +1,16 @@
+description = "import a.b as x binds the submodule"
+kept = ["a.b:f"]
+removed = ["a.b:g"]
+stdout = "ab\n"
+=== main.py
+import a.b as x
+
+print(x.f())
+=== a/__init__.py
+=== a/b.py
+def f():
+    return "ab"
+
+
+def g():
+    pass

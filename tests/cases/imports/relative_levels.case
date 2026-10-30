@@ -1,0 +1,24 @@
+description = "relative imports at levels 1-3 resolve correctly"
+kept = ["p.top:T", "p.q.mid:M", "p.q.r.leaf:use"]
+stdout = "T M\n"
+=== main.py
+from p.q.r.leaf import use
+
+print(use())
+=== p/__init__.py
+=== p/top.py
+T = "T"
+=== p/q/__init__.py
+=== p/q/mid.py
+M = "M"
+=== p/q/r/__init__.py
+=== p/q/r/leaf.py
+from ...top import T
+from ..mid import M
+from . import sib
+
+
+def use():
+    return f"{T} {M}"
+=== p/q/r/sib.py
+X = 1

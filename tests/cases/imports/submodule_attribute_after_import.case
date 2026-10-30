@@ -1,0 +1,12 @@
+description = "after 'import pkg.sub' anywhere, pkg.sub is reachable as an attribute of pkg"
+kept = ["pkg.sub:f"]
+stdout = "f\n"
+=== main.py
+import pkg
+import pkg.sub
+
+print(pkg.sub.f())
+=== pkg/__init__.py
+=== pkg/sub.py
+def f():
+    return "f"

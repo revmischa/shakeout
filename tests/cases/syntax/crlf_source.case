@@ -1,0 +1,22 @@
+description = "line numbers stay right in sources with backslash continuations and multi-line strings"
+exit_code = 1
+=== main.py
+from lib import fail
+
+fail()
+=== lib.py
+DOC = """
+multi
+line
+"""
+
+
+def unused():
+    return (1 +
+            2)
+
+
+def fail():
+    x = 1 + \
+        2
+    raise ValueError(x)

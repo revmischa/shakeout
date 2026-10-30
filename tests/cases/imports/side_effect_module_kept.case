@@ -1,0 +1,13 @@
+description = "a module with import-time side effects is kept even if no binding is used"
+bundled_modules = ["noisy"]
+stdout = "noisy loaded\nok\n"
+=== main.py
+import noisy
+
+print("ok")
+=== noisy.py
+print("noisy loaded")
+
+
+def unused():
+    pass

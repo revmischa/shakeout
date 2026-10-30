@@ -1,0 +1,16 @@
+description = "keep = ['module:name'] retains a symbol that is otherwise unreachable"
+options = { keep = ["lib:hook"] }
+kept = ["lib:hook"]
+removed = ["lib:other"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+def hook():
+    pass
+
+
+def other():
+    pass

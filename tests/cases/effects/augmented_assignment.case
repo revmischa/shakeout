@@ -1,0 +1,9 @@
+description = "augmented assignment at module level is kept with its target"
+stdout = "3\n"
+=== main.py
+from lib import N
+
+print(N)
+=== lib.py
+N = 1
+N += 2

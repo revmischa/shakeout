@@ -1,0 +1,15 @@
+description = "using Class.attr keeps the class and what its body references"
+kept = ["lib:Settings", "lib:DEFAULT_PORT"]
+removed = ["lib:UNUSED"]
+stdout = "8080\n"
+=== main.py
+from lib import Settings
+
+print(Settings.port)
+=== lib.py
+DEFAULT_PORT = 8080
+UNUSED = 1
+
+
+class Settings:
+    port = DEFAULT_PORT

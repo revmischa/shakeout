@@ -1,0 +1,19 @@
+description = "class decorators with side effects keep the class"
+kept = ["lib:Thing"]
+stdout = "['Thing']\n"
+=== main.py
+import lib
+
+print(lib.SEEN)
+=== lib.py
+SEEN = []
+
+
+def track(cls):
+    SEEN.append(cls.__name__)
+    return cls
+
+
+@track
+class Thing:
+    pass

@@ -1,0 +1,15 @@
+description = "objects from bundled modules pickle and unpickle by qualified name"
+stdout = "Point(x=1)\n"
+=== main.py
+import pickle
+
+from geo import Point
+
+print(pickle.loads(pickle.dumps(Point(1))))
+=== geo.py
+from dataclasses import dataclass
+
+
+@dataclass
+class Point:
+    x: int

@@ -1,0 +1,21 @@
+description = "dataclasses with field() defaults are pure and removable when unused; used ones work"
+removed = ["lib:Unused"]
+kept = ["lib:Config"]
+stdout = "Config(name='x', tags=[])\n"
+=== main.py
+from lib import Config
+
+print(Config("x"))
+=== lib.py
+from dataclasses import dataclass, field
+
+
+@dataclass
+class Config:
+    name: str
+    tags: list = field(default_factory=list)
+
+
+@dataclass
+class Unused:
+    items: list = field(default_factory=list)

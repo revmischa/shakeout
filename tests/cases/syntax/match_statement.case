@@ -1,0 +1,21 @@
+description = "match statements: capture names are locals, referenced globals are kept"
+kept = ["lib:DEFAULT"]
+removed = ["lib:point"]
+stdout = "origin default\n"
+=== main.py
+from lib import describe
+
+print(describe((0, 0)), describe("x"))
+=== lib.py
+DEFAULT = "default"
+point = "global point"
+
+
+def describe(v):
+    match v:
+        case (0, 0):
+            return "origin"
+        case [*point]:
+            return str(point)
+        case _:
+            return DEFAULT

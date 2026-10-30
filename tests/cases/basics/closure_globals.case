@@ -1,0 +1,20 @@
+description = "globals referenced from nested functions and lambdas are kept"
+kept = ["lib:SUFFIX", "lib:PREFIX", "lib:make"]
+removed = ["lib:UNUSED"]
+stdout = "<x!>\n"
+=== main.py
+from lib import make
+
+print(make()("x"))
+=== lib.py
+PREFIX = "<"
+SUFFIX = "!>"
+UNUSED = "?"
+
+
+def make():
+    def inner(s):
+        wrap = lambda t: t + SUFFIX
+        return PREFIX + wrap(s)
+
+    return inner

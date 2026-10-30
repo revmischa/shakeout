@@ -1,0 +1,21 @@
+description = "TYPE_CHECKING-only imports never load the module at runtime"
+dropped_modules = ["typesonly"]
+stdout = "ok\n"
+=== main.py
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typesonly import Big
+
+
+def f(x: "Big") -> None:
+    print("ok")
+
+
+f(None)
+=== typesonly.py
+print("SHOULD NOT PRINT")
+
+
+class Big:
+    pass

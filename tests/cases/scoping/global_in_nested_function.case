@@ -1,0 +1,19 @@
+description = "a 'global' declaration in a nested function reads the module global"
+kept = ["lib:G"]
+stdout = "g\n"
+=== main.py
+from lib import outer
+
+print(outer())
+=== lib.py
+G = "g"
+
+
+def outer():
+    G = "local"
+
+    def inner():
+        global G
+        return G
+
+    return inner()

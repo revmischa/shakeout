@@ -1,0 +1,11 @@
+description = "vars() / locals() at module level keep the module whole"
+kept = ["reg:x", "reg:y"]
+stdout = "['x', 'y']\n"
+=== main.py
+from reg import names
+
+print(names)
+=== reg.py
+x = 1
+y = 2
+names = sorted(k for k in vars() if not k.startswith("_"))

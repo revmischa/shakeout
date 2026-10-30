@@ -1,0 +1,14 @@
+description = "__all__ and other module dunders are always kept"
+kept = ["lib:__all__", "lib:__version__"]
+stdout = "['f'] 1.0\n"
+=== main.py
+import lib
+
+print(lib.__all__, lib.__version__)
+=== lib.py
+__all__ = ["f"]
+__version__ = "1.0"
+
+
+def f():
+    pass

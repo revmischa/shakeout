@@ -1,0 +1,11 @@
+description = "a class whose base comes from a non-stdlib external package is conservatively kept"
+kept = ["lib:Mine"]
+exit_code = 1
+=== main.py
+import lib
+=== lib.py
+from some_framework_not_installed import Model
+
+
+class Mine(Model):
+    pass

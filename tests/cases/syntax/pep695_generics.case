@@ -1,0 +1,22 @@
+description = "PEP 695 type parameters and type aliases"
+min_python = "3.12"
+removed = ["lib:Unused", "lib:Pair", "lib:x", "lib:_uses_pair"]
+kept = ["lib:first"]
+stdout = "1\n"
+=== main.py
+from lib import first
+
+print(first([1, 2]))
+=== lib.py
+type Pair[T] = tuple[T, T]
+type Unused = int
+
+
+def first[T](xs: list[T]) -> T:
+    return xs[0]
+
+
+def _uses_pair(p: Pair[int]) -> None: ...
+
+
+x: Pair[int] = (1, 1)

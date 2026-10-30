@@ -1,0 +1,14 @@
+description = "assignments whose value calls unknown code are kept even when unused"
+kept = ["lib:UNUSED_BUT_IMPURE", "lib:compute"]
+stdout = "computing\nok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+def compute():
+    print("computing")
+    return 1
+
+
+UNUSED_BUT_IMPURE = compute()

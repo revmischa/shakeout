@@ -1,0 +1,13 @@
+description = "'# shakeout: pure' marks an otherwise impure statement as removable"
+removed = ["lib:EXPENSIVE"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+def build():
+    return [1, 2, 3]
+
+
+EXPENSIVE = build()  # shakeout: pure

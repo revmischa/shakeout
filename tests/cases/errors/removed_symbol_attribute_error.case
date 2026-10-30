@@ -1,0 +1,20 @@
+description = "reaching a removed attribute dynamically fails with an explanation naming the keep option"
+argv = ["hidden"]
+stdout = "hidden\n"
+equivalent = false
+bundle_exit_code = 1
+bundle_stderr_contains = ["AttributeError", "removed by shakeout", "keep", "lib:hidden"]
+targets = ["single", "tree"]
+=== main.py
+import sys
+
+import lib
+
+print(lib.visible() and getattr(sys.modules["lib"], sys.argv[1])())
+=== lib.py
+def visible():
+    return "visible"
+
+
+def hidden():
+    return "hidden"

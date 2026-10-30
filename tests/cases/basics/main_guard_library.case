@@ -1,0 +1,20 @@
+description = "if __name__ == '__main__' blocks in library modules are dead and their references do not keep code"
+removed = ["lib:selftest"]
+kept = ["lib:f"]
+stdout = "f\n"
+=== main.py
+import lib
+
+lib.f()
+=== lib.py
+def f():
+    print("f")
+
+
+def selftest():
+    f()
+    print("ok")
+
+
+if __name__ == "__main__":
+    selftest()

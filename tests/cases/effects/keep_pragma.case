@@ -1,0 +1,10 @@
+description = "'# shakeout: keep' keeps an otherwise removable definition"
+kept = ["lib:hook"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+def hook():  # shakeout: keep
+    return 1

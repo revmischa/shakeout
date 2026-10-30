@@ -1,0 +1,24 @@
+description = "re-exports through several packages are followed to the defining module"
+kept = ["a.b.core:target"]
+removed = ["a.b.core:other", "a.b.extra:thing"]
+dropped_modules = ["a.b.extra"]
+stdout = "target\n"
+=== main.py
+from a import target
+
+print(target())
+=== a/__init__.py
+from .b import target
+=== a/b/__init__.py
+from .core import target
+from .extra import thing
+=== a/b/core.py
+def target():
+    return "target"
+
+
+def other():
+    return "other"
+=== a/b/extra.py
+def thing():
+    return 1

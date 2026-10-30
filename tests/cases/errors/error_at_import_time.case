@@ -1,0 +1,11 @@
+description = "an exception raised while a bundled module is being imported shows the import chain"
+exit_code = 1
+=== main.py
+import pkg.broken
+=== pkg/__init__.py
+=== pkg/broken.py
+def helper():
+    pass
+
+
+raise RuntimeError("broken at import")

@@ -1,0 +1,19 @@
+description = "warnings report the original file and line"
+exit_code = 0
+=== main.py
+import warnings
+
+from lib import old
+
+warnings.simplefilter("always")
+old()
+=== lib.py
+import warnings
+
+
+def unused():
+    pass
+
+
+def old():
+    warnings.warn("old is deprecated", DeprecationWarning, stacklevel=1)

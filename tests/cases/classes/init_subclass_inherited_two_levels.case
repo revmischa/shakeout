@@ -1,0 +1,24 @@
+description = "registration via __init_subclass__ inherited through an intermediate base is detected"
+kept = ["impl:Leaf"]
+stdout = "['Leaf', 'Mid']\n"
+=== main.py
+import impl
+from base import Root
+
+print(sorted(Root.seen))
+=== base.py
+class Root:
+    seen = []
+
+    def __init_subclass__(cls):
+        Root.seen.append(cls.__name__)
+
+
+class Mid(Root):
+    pass
+=== impl.py
+from base import Mid
+
+
+class Leaf(Mid):
+    pass

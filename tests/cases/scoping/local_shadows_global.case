@@ -1,0 +1,15 @@
+description = "a function-local variable with a global's name does not keep the global"
+removed = ["lib:value"]
+kept = ["lib:f"]
+stdout = "local\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+value = "global"
+
+
+def f():
+    value = "local"
+    return value

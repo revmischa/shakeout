@@ -1,0 +1,28 @@
+description = "functions registered by a decorator with side effects are kept even if never referenced"
+kept = ["handlers:on_start", "handlers:on_stop", "registry:REGISTRY"]
+stdout = "['on_start', 'on_stop']\nstarting\n"
+=== main.py
+import handlers
+from registry import REGISTRY
+
+print(sorted(REGISTRY))
+REGISTRY["on_start"]()
+=== registry.py
+REGISTRY = {}
+
+
+def register(fn):
+    REGISTRY[fn.__name__] = fn
+    return fn
+=== handlers.py
+from registry import register
+
+
+@register
+def on_start():
+    print("starting")
+
+
+@register
+def on_stop():
+    print("stopping")

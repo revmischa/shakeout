@@ -1,0 +1,25 @@
+description = "same module basename in different packages are distinct modules"
+kept = ["a.util:f", "b.util:g"]
+removed = ["a.util:g", "b.util:f"]
+stdout = "a.f b.g\n"
+=== main.py
+from a.util import f
+from b.util import g
+
+print(f(), g())
+=== a/__init__.py
+=== a/util.py
+def f():
+    return "a.f"
+
+
+def g():
+    return "a.g"
+=== b/__init__.py
+=== b/util.py
+def f():
+    return "b.f"
+
+
+def g():
+    return "b.g"

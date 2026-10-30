@@ -1,0 +1,17 @@
+description = "dropping an unused import statement does not drop a module another kept import needs"
+bundled_modules = ["lib"]
+stdout = "2\n"
+=== main.py
+import lib
+from helper import twice
+
+print(twice(1))
+=== lib.py
+def one():
+    return 1
+=== helper.py
+from lib import one
+
+
+def twice(x):
+    return x + one()

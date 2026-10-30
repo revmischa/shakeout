@@ -1,0 +1,14 @@
+description = "the pure_calls option marks a project function as side-effect free"
+options = { pure_calls = ["lib.make"] }
+removed = ["lib:THING"]
+stdout = "ok\n"
+=== main.py
+import lib
+
+print("ok")
+=== lib.py
+def make():
+    return {}
+
+
+THING = make()

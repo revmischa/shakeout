@@ -1,0 +1,16 @@
+description = "star import with __all__ binds only listed names; behavior matches the original"
+stdout = "True False\n"
+=== main.py
+from stars import *
+
+print("pub" in dir(), "_priv" in dir() or "hidden" in dir())
+=== stars.py
+__all__ = ["pub"]
+
+
+def pub():
+    pass
+
+
+def hidden():
+    pass

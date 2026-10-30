@@ -1,0 +1,15 @@
+description = "names referenced inside nested f-strings are kept"
+min_python = "3.12"
+kept = ["lib:NAME", "lib:SEP"]
+stdout = "<x|x>\n"
+=== main.py
+from lib import f
+
+print(f())
+=== lib.py
+NAME = "x"
+SEP = "|"
+
+
+def f():
+    return f"<{f"{NAME}{SEP}{NAME}"}>"

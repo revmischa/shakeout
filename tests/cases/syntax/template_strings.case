@@ -1,0 +1,14 @@
+description = "tstrings and other new syntax parse when supported"
+min_python = "3.14"
+kept = ["lib:who"]
+stdout = "Template\n"
+=== main.py
+from lib import t
+
+print(type(t()).__name__)
+=== lib.py
+who = "world"
+
+
+def t():
+    return t"hello {who}"

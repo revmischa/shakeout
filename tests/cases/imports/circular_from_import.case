@@ -1,0 +1,18 @@
+description = "circular from-imports that work in CPython keep working"
+kept = ["x:X", "y:Y"]
+stdout = "X Y\n"
+=== main.py
+import x
+
+print(x.X, x.get_y())
+=== x.py
+X = "X"
+from y import Y
+
+
+def get_y():
+    return Y
+=== y.py
+from x import X
+
+Y = "Y"

@@ -1,0 +1,16 @@
+description = "a fully computed import name warns; at runtime the bundle fails with an explanatory note"
+warnings = ["dynamic import"]
+argv = ["target_mod"]
+stdout = "target\n"
+equivalent = false
+bundle_exit_code = 1
+bundle_stderr_contains = ["No module named 'target_mod'", "shakeout:", "keep"]
+targets = ["single"]
+=== main.py
+import importlib
+import sys
+
+importlib.import_module(sys.argv[1]).run()
+=== target_mod.py
+def run():
+    print("target")
