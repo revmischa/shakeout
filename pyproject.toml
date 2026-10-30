@@ -54,6 +54,9 @@ dev = [
     "mutmut>=3.8.1",
     "typing-extensions>=4.16.0",
 ]
+docs = [
+    "mkdocs-material>=9.6",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

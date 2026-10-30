@@ -8,19 +8,21 @@ Working name: **shakeout** (free on PyPI; alternatives: `secateurs`, `defoliate`
 | Phase | State | Notes |
 |---|---|---|
 | 0. Test foundation | done | Harness, oracles (validated against broken-bundler stubs), 126 cases. The case format became one `.case` file per case (TOML header + `=== path` sections) instead of a directory; much faster to write and review. |
-| 1. Bundler without shaking | done | `single` and `tree` targets, line preservation, linecache registration, manifest. |
+| 1. Bundler without shaking | done | `single`, `tree`, `pyz`, `lambda`; line preservation; linecache registration; manifest. |
 | 2. Analysis | done | Scopes (stdlib-wide `symtable` differential), effects, dynamic detection. |
 | 3. Shaking | done | Plus esbuild-style import rewriting: kept `from m import a, b` drops unused names. |
-| 4. Diagnostics | mostly | Tombstone `__getattr__`, runtime notes (dropped modules, dynamic imports, removed names via `ImportError`/`NameError`), `why`, `report`. Not yet: `--debug` stubs, `shakeout trace`. |
-| 5. Dependencies, uv, Lambda | started | Real-world corpus runs; `include`/`roots` exist. Not yet: uv-lock staging, `pyz`/`lambda` targets, data files, Lambda RIE test. |
-| 6. Hardening | partly | Fuzzer (nightly 1500 programs), self-hosting, Python 3.10-3.15 matrix, ruff + pyright strict. Not yet: mutation testing, running libraries' own test suites against shaken trees, benchmarks. |
-| 7. Later | not started | |
+| 4. Diagnostics | done | Tombstone `__getattr__`, runtime notes, `why`, `report`, `trace`. `--debug` stubs were dropped: tombstones and notes cover the same need. |
+| 5. Dependencies, uv, Lambda | done | `--uv` lock staging with target python/platform, vendoring of unshaken distributions, `include`, library entries (`exports`), reproducible Lambda zip with an invocation test. A Docker-based Lambda emulator test is still open. |
+| 6. Hardening | done | Fuzzer, mutation testing (100% kill), self-hosting and dead-code dogfooding, 3.10-3.15 matrix, strict lint/types, coverage gate, supply-chain checks. Open: running libraries' own test suites against shaken trees; benchmarks. |
+| 7. Later | partly | `--minify`/`--strip-docstrings` done. Open: multi-entry shared layers, `hatch-shakeout`, GitHub Action. |
 
 Bugs found by the oracles so far, each now a regression test: names required by kept
 `from`-imports were removed (fuzz), imports inside whole modules lost their targets (fuzz),
 `global` in a nested function resolved to the enclosing local (case catalog), sources with form
 feeds shifted line numbers (3.10 stdlib sweep), the pre-3.13 C excepthook bypassing linecache
-(version matrix), and a dead constant in shakeout itself (self-hosting).
+(version matrix), a dead constant in shakeout itself (self-hosting), a cached analysis that
+hid mutants, `keep = ["pkg:submodule"]` not discovering the submodule, and silent `keep`/`export`
+of undefined names (mutation testing).
 
 Corpus results (pure-Python libraries, each driven by a small script exercising its main API):
 

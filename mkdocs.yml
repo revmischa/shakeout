@@ -1,0 +1,96 @@
+site_name: shakeout
+site_description: A tree-shaking bundler for Python. Smaller deploys, exact tracebacks.
+repo_name: shakeout
+copyright: MIT licensed
+use_directory_urls: false
+strict: true
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: astral-light
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: astral-dark
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - navigation.sections
+    - navigation.indexes
+    - navigation.footer
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - toc:
+      permalink: "#"
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - pymdownx.keys
+
+nav:
+  - Introduction: index.md
+  - Getting started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Your first bundle: getting-started/first-bundle.md
+      - Features: getting-started/features.md
+  - Guides:
+      - guides/index.md
+      - AWS Lambda: guides/aws-lambda.md
+      - Command-line tools: guides/cli-tools.md
+      - Dependencies and uv: guides/dependencies.md
+      - Debugging tracebacks: guides/tracebacks.md
+      - Dynamic code: guides/dynamic-code.md
+  - Concepts:
+      - concepts/index.md
+      - How shaking works: concepts/how-it-works.md
+      - Side effects: concepts/side-effects.md
+      - Import rewriting: concepts/import-rewriting.md
+      - Targets: concepts/targets.md
+      - Soundness and testing: concepts/soundness.md
+  - Reference:
+      - reference/index.md
+      - Command line: reference/cli.md
+      - Configuration: reference/configuration.md
+      - Pragmas: reference/pragmas.md
+      - Diagnostics: reference/diagnostics.md
+      - Python API: reference/python-api.md
+  - Project:
+      - Contributing: project/contributing.md
+      - Design document: project/design.md

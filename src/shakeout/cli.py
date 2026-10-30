@@ -107,7 +107,7 @@ def _parser() -> argparse.ArgumentParser:
     b.add_argument(
         "--no-embed-source",
         action="store_true",
-        help="do not ship sources for traceback lines (see 'shakeout trace')",
+        help="do not show source lines in tracebacks (see 'shakeout trace')",
     )
     b.add_argument(
         "--no-tombstones",
