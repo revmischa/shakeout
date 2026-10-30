@@ -1,0 +1,43 @@
+description = "found by fuzzing: an import kept for its side effects still needs the names it imports"
+kept = ["m2:f2_0", "m0:f0_2"]
+removed = ["m0:f0_1"]
+stdout = "f0_0\nresult 0\nf2_1\nregistered f2_1 0\n"
+=== main.py
+import reg
+import m0
+
+print('result', m0.f0_0())
+for _k in sorted(reg.REGISTRY):
+    print('registered', _k, reg.REGISTRY[_k]())
+=== m0.py
+def f0_0():
+    print('f0_0')
+    return 0
+
+
+def f0_1():
+    print('f0_1')
+    return 0
+
+
+from m2 import f2_0 as f0_2
+=== m2.py
+import reg
+
+
+def f2_0():
+    print('f2_0')
+    return 0
+
+
+@reg.register
+def f2_1():
+    print('f2_1')
+    return 0
+=== reg.py
+REGISTRY = {}
+
+
+def register(fn):
+    REGISTRY[fn.__name__] = fn
+    return fn

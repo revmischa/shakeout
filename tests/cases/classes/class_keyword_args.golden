@@ -2,6 +2,6 @@ module __main__ [main.py] bundled
   + L1        from lib import Base, TAGS  [root: imports 'lib', which has side effects]
   + L3        print(TAGS)  [root: expr statement at module level]
 module lib [lib.py] bundled
-  + L1        TAGS = []  [used as TAGS]
-  + L4-6      class Base:  [used as Base]
+  + L1        TAGS = []  [imported by __main__@L1-L1]
+  + L4-6      class Base:  [imported by __main__@L1-L1]
   + L9-10     class Tagged(Base, tag="x"):  [root: class keyword tag= is passed to the metaclass/__init_subclass__]

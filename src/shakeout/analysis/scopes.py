@@ -39,7 +39,7 @@ class ImportContext:
             return module
         package = self.module if self.is_package else self.module.rpartition(".")[0]
         parts = package.split(".") if package else []
-        if level - 1 > len(parts) or not package:
+        if level - 1 >= len(parts) or not package:
             return None
         base_parts = parts[: len(parts) - (level - 1)]
         if module:
@@ -278,7 +278,8 @@ class RefCollector(ast.NodeVisitor):
             is_import_module = (attrs == ("import_module",) and (
                 (not found and root == "importlib")
                 or target == ModuleTarget("importlib"))) or (
-                not attrs and found and target == FromTarget("importlib", "import_module"))
+                not attrs and root == "import_module" and (
+                    not found or target == FromTarget("importlib", "import_module")))
             if is_dunder_import or is_import_module:
                 self._dynamic_import(node)
         self.generic_visit(node)

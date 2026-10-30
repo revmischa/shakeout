@@ -146,6 +146,7 @@ class Shaker:
             self.load(st.module)
             for name in sorted(st.loads):
                 self.load(name)
+            self._require_imported_names(key, st)
             for ref in st.refs:
                 res = self.resolver.resolve_ref(st.module, ref)
                 label = ".".join((_base_name(ref), *ref.attrs))
@@ -154,6 +155,19 @@ class Shaker:
                 for mod in sorted(res.whole):
                     self.make_whole(mod, f"module object used as a value ({label}) at {st.id}")
         return self.state
+
+
+    def _require_imported_names(self, key: StmtKey, st: Statement) -> None:
+        """A kept ``from x import y`` fails at runtime unless ``y`` exists, so keep its binders.
+
+        (A submodule only has to be loaded, which ``loads`` already guarantees.)
+        """
+        for name in sorted(st.binds):
+            for target in st.binds[name]:
+                if isinstance(target, FromTarget):
+                    res = self.resolver.resolve(st.module, target, ())
+                    for binder in sorted(res.traversed):
+                        self.mark(binder, Reason("ref", f"imported by {st.id}", key))
 
 
 def _base_name(ref: Ref) -> str:

@@ -24,7 +24,7 @@ from .analysis.scopes import ImportContext, attribute_chain, collect, module_bin
 from .graph import Reason, Resolver, Shaker, StmtKey
 from .model import Diagnostic, DynamicUse, Module, ModuleTarget, NameTarget, Ref, Statement
 from .options import Options
-from .resolve import Found, ModuleFinder, display_filename, is_pure_external
+from .resolve import Found, ModuleFinder, display_filename, is_pure_external, is_stdlib
 
 _BUILTINS = frozenset(dir(builtins))
 _PRAGMA = re.compile(r"#\s*shakeout:\s*(pure|keep)\b")
@@ -142,7 +142,11 @@ class Project:
             return
         found = self.finder.find(name)
         if found is None:
-            self._missing.add(name)
+            if is_stdlib(name):
+                # e.g. collections.abc on 3.15 is installed by its parent, not a file.
+                self.externals[name] = "stdlib" if is_pure_external(name) else "builtin"
+            else:
+                self._missing.add(name)
             return
         if not self.finder.bundleable(found):
             self.externals[name] = "stdlib" if is_pure_external(name) else found.kind

@@ -25,7 +25,9 @@ def render_report(result: ShakeResult) -> str:
             why = ""
             if st.kept:
                 reason = result.reasons[(name, st.index)]
-                why = reason.detail if reason.kind != "ref" else f"used as {reason.detail}"
+                why = reason.detail
+                if reason.kind == "ref" and not why.startswith("imported by"):
+                    why = f"used as {why}"
                 why = f"  [{reason.kind}: {why}]" if reason.kind != "ref" else f"  [{why}]"
             elif st.dead:
                 why = "  [dead: not the entry module]"
