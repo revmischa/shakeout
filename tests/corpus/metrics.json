@@ -1,18 +1,18 @@
 {
   "attrs": {
-    "bytes_bundled": 169784,
+    "bytes_bundled": 169548,
     "bytes_reachable_modules": 176014,
     "modules_bundled": 19,
     "modules_discovered": 19,
-    "statements_kept": 236,
+    "statements_kept": 234,
     "statements_total": 253
   },
   "click": {
-    "bytes_bundled": 299256,
+    "bytes_bundled": 298922,
     "bytes_reachable_modules": 347533,
     "modules_bundled": 16,
     "modules_discovered": 16,
-    "statements_kept": 473,
+    "statements_kept": 470,
     "statements_total": 535
   },
   "dateutil": {
@@ -32,11 +32,11 @@
     "statements_total": 137
   },
   "jinja": {
-    "bytes_bundled": 465071,
+    "bytes_bundled": 464054,
     "bytes_reachable_modules": 488693,
     "modules_bundled": 24,
     "modules_discovered": 25,
-    "statements_kept": 693,
+    "statements_kept": 685,
     "statements_total": 764
   },
   "packaging": {
@@ -48,11 +48,11 @@
     "statements_total": 248
   },
   "rich": {
-    "bytes_bundled": 1041627,
+    "bytes_bundled": 1077176,
     "bytes_reachable_modules": 1396792,
-    "modules_bundled": 91,
+    "modules_bundled": 89,
     "modules_discovered": 166,
-    "statements_kept": 1064,
+    "statements_kept": 1077,
     "statements_total": 1870
   },
   "six": {
