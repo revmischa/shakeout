@@ -3,6 +3,40 @@
 Status: draft for review · 2026-10-30
 Working name: **shakeout** (free on PyPI; alternatives: `secateurs`, `defoliate`, `leafdrop`). Renaming is a find/replace until Phase 1 ships.
 
+## Status (2026-10-30)
+
+| Phase | State | Notes |
+|---|---|---|
+| 0. Test foundation | done | Harness, oracles (validated against broken-bundler stubs), 126 cases. The case format became one `.case` file per case (TOML header + `=== path` sections) instead of a directory; much faster to write and review. |
+| 1. Bundler without shaking | done | `single` and `tree` targets, line preservation, linecache registration, manifest. |
+| 2. Analysis | done | Scopes (stdlib-wide `symtable` differential), effects, dynamic detection. |
+| 3. Shaking | done | Plus esbuild-style import rewriting: kept `from m import a, b` drops unused names. |
+| 4. Diagnostics | mostly | Tombstone `__getattr__`, runtime notes (dropped modules, dynamic imports, removed names via `ImportError`/`NameError`), `why`, `report`. Not yet: `--debug` stubs, `shakeout trace`. |
+| 5. Dependencies, uv, Lambda | started | Real-world corpus runs; `include`/`roots` exist. Not yet: uv-lock staging, `pyz`/`lambda` targets, data files, Lambda RIE test. |
+| 6. Hardening | partly | Fuzzer (nightly 1500 programs), self-hosting, Python 3.10-3.15 matrix, ruff + pyright strict. Not yet: mutation testing, running libraries' own test suites against shaken trees, benchmarks. |
+| 7. Later | not started | |
+
+Bugs found by the oracles so far, each now a regression test: names required by kept
+`from`-imports were removed (fuzz), imports inside whole modules lost their targets (fuzz),
+`global` in a nested function resolved to the enclosing local (case catalog), sources with form
+feeds shifted line numbers (3.10 stdlib sweep), the pre-3.13 C excepthook bypassing linecache
+(version matrix), and a dead constant in shakeout itself (self-hosting).
+
+Corpus results (pure-Python libraries, each driven by a small script exercising its main API):
+
+| Library | Modules shipped / reachable | Top-level statements kept | Bytes saved |
+|---|---|---|---|
+| rich | 91 / 166 | 1064 / 1870 | 25% |
+| packaging | 10 / 13 | 150 / 248 | 27% |
+| click | 16 / 16 | 473 / 535 | 14% |
+| jinja2 (+markupsafe) | 24 / 25 | 693 / 764 | 5% |
+| attrs | 19 / 19 | 236 / 253 | 4% |
+| dateutil, idna, six, tomli | all | 98-100% | ~0% |
+
+Libraries whose public API imports everything eagerly gain little; libraries with lazy or
+optional subsystems (rich, packaging) gain a lot. Statement-level shaking inside large
+first-party codebases, and opting in heavy dependencies, are where the remaining upside is.
+
 ---
 
 ## 1. Summary

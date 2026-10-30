@@ -19,7 +19,6 @@ from dataclasses import dataclass, field
 from ..model import DynamicUse, FromTarget, ImportTarget, ModuleTarget, NameTarget, Ref
 
 _FUNCS = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
-_COMPS = (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)
 # Marker in a scope dict: the name is declared ``global`` here, so lookup must stop and resolve
 # to the module namespace even if an enclosing function has a local of the same name.
 GLOBAL_DECL = ModuleTarget("<global>")

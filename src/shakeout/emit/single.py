@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
-from .. import __version__
+from .. import __version__, runtime
 from ..project import ShakeResult
 from . import BuildResult, build_source, manifest, module_chunks
-
-_RUNTIME = Path(__file__).resolve().parent.parent / "runtime.py"
 
 
 def write_single(result: ShakeResult, out: Path) -> BuildResult:
@@ -28,12 +27,13 @@ def write_single(result: ShakeResult, out: Path) -> BuildResult:
     entry_chunks = module_chunks(result, entry)
     contents["__main__"] = build_source(entry_chunks)
     meta = manifest(result, contents)
-    runtime = _RUNTIME.read_text(encoding="utf-8")
+    # Via inspect (not a file read) so a bundled shakeout can still produce bundles.
+    runtime_source = inspect.getsource(runtime)
     lines = [
         "#!/usr/bin/env python3",
         f"# Bundled by shakeout {__version__} from {result.entry.name}. Do not edit.",
         f"# build {meta['build_id']}; source line numbers are preserved.",
-        runtime.rstrip("\n"),
+        runtime_source.rstrip("\n"),
         "",
         "_shakeout_modules = {",
     ]
