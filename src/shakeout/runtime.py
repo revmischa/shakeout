@@ -119,14 +119,14 @@ class _ShakeoutRuntime:
     def add_note(exc: BaseException, note: str) -> None:
         if hasattr(exc, "add_note"):
             exc.add_note(note)  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
-        else:  # Python 3.10 has no notes; excepthook() prints __notes__ itself
+        else:  # pragma: no cover - Python 3.10 has no notes; excepthook() prints __notes__
             exc.__notes__ = [*getattr(exc, "__notes__", ()), note]  # type: ignore[attr-defined]  # pyright: ignore[reportAttributeAccessIssue]
 
     @staticmethod
     def imported_name(exc: ImportError) -> str | None:
         name_from: str | None = getattr(exc, "name_from", None)  # Python 3.12+
         prefix = "cannot import name '"
-        if name_from is None and exc.args and isinstance(exc.args[0], str):
+        if name_from is None and exc.args and isinstance(exc.args[0], str):  # pragma: no cover
             message: str = exc.args[0]
             if message.startswith(prefix):
                 name_from = message[len(prefix) :].split("'", 1)[0]
@@ -195,7 +195,7 @@ class _ShakeoutRuntime:
         import traceback  # noqa: PLC0415
 
         traceback.print_exception(exc_type, exc, tb)
-        if not hasattr(exc, "add_note"):  # 3.10's traceback does not print notes
+        if not hasattr(exc, "add_note"):  # pragma: no cover - 3.10's traceback skips notes
             for note in getattr(exc, "__notes__", ()):
                 print(note, file=sys.stderr)  # noqa: T201
 
@@ -203,7 +203,7 @@ class _ShakeoutRuntime:
     def run(self, entry: tuple[str, _ShakeoutChunks], main_globals: dict[str, object]) -> None:
         import sys  # noqa: PLC0415
 
-        if sys.version_info < self.HOOK_BYPASSES_LINECACHE_BEFORE and (
+        if sys.version_info < self.HOOK_BYPASSES_LINECACHE_BEFORE and (  # pragma: no cover
             sys.excepthook is sys.__excepthook__
         ):
             # Before 3.13 the default hook is written in C and reads source lines straight from

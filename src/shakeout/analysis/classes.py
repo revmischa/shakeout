@@ -10,7 +10,8 @@ from __future__ import annotations
 import ast
 from typing import TYPE_CHECKING
 
-from shakeout.analysis.effects import PURE_BASE_MODULES, PURE_BASES, EffectRules
+from shakeout.analysis.effects import EffectRules
+from shakeout.analysis.registry import PURE_BASE_MODULES, PURE_BASES
 from shakeout.analysis.scopes import attribute_chain
 from shakeout.model import NameTarget
 

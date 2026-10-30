@@ -8,7 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from shakeout.api import Options, build
+from shakeout.api import Options, analyze, build
+from shakeout.api import __all__ as api_all
 from tests.harness.project import write_project
 from tests.harness.run import run_python
 
@@ -60,3 +61,23 @@ def test_bundled_shakeout_reproduces_its_own_output(tmp_path: Path, tool_target:
         )
         assert result.returncode == 0, result.describe()
         assert _digest(root / f"self-{target}") == _digest(reference.out), target
+
+
+def test_shakeout_has_no_dead_code(tmp_path: Path) -> None:
+    """Dogfooding: shaking shakeout from its CLI and public API removes nothing."""
+    api_names = ", ".join(f"api.{name}" for name in api_all)
+    entry = (
+        write_project(
+            tmp_path,
+            {
+                "uses.py": (
+                    "from shakeout import api, cli\n\n"
+                    f"USED = (cli.main, {api_names})  # shakeout: keep\n"
+                ),
+            },
+        )
+        / "uses.py"
+    )
+    result = analyze(entry, Options(roots=(str(SRC),)))
+    removed = sorted(s for s in result.removed if not s.startswith("__main__:"))
+    assert removed == [], "unreachable definitions in shakeout:\n" + "\n".join(removed)

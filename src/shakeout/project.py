@@ -87,7 +87,10 @@ class Project:
         self._add_entry()
         queue.append(self.entry_name)
         for spec in self.options.keep:
-            self._consider_all(spec.partition(":")[0], queue)
+            module, _, name = spec.partition(":")
+            self._consider_all(module, queue)
+            if name and name != "*":  # "pkg:plugin" may name a submodule nothing imports
+                self._consider_all(f"{module}.{name}", queue)
         while queue:
             mod = self.modules[queue.popleft()]
             for st in mod.statements:
@@ -248,14 +251,20 @@ class Project:
         shaker.load(self.entry_name)
         for export in self.options.exports:
             module, _, name = export.rpartition(":")
-            shaker.keep_symbol(module or self.entry_name, name, why=f"export {export}")
+            if not shaker.keep_symbol(module or self.entry_name, name, why=f"export {export}"):
+                self._missing_definition("export", export, name)
         for spec in self.options.keep:
             module, _, name = spec.partition(":")
             if not name or name == "*":
                 shaker.make_whole(module, f"keep option {spec}")
-            else:
-                shaker.keep_symbol(module, name)
+            elif module in self.modules and not shaker.keep_symbol(module, name):
+                self._missing_definition("keep option", spec, name)
         return shaker.run()
+
+    def _missing_definition(self, what: str, spec: str, name: str) -> None:
+        self.diagnostics.append(
+            Diagnostic("warning", f"{what} {spec!r}: nothing in the bundle defines {name!r}")
+        )
 
 
 class _ModuleAnalyzer:

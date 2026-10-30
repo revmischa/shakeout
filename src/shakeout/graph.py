@@ -46,7 +46,7 @@ class Resolver:
         self._memo: dict[tuple[str, str, tuple[str, ...]], Resolution] = {}
         self._active: set[tuple[str, str, tuple[str, ...]]] = set()
 
-    def resolve(self, module: str, base: Target, attrs: tuple[str, ...]) -> Resolution:
+    def resolve(self, module: str, base: Target, attrs: tuple[str, ...] = ()) -> Resolution:
         """Follow ``base.attrs`` from ``module`` to the statements that bind it."""
         if isinstance(base, NameTarget):
             return self._name(module, base.name, attrs)
@@ -166,16 +166,16 @@ class Shaker:
         self.state.reasons[key] = reason
         self._queue.append(key)
 
-    def keep_symbol(self, module: str, name: str, *, why: str = "") -> None:
-        """Keep whatever ``module:name`` resolves to, as if something referenced it."""
+    def keep_symbol(self, module: str, name: str, *, why: str = "") -> bool:
+        """Keep whatever ``module:name`` resolves to; False if nothing defines it."""
         why = why or f"keep option {module}:{name}"
-        self.load(module)
-        res = self.resolver.resolve(module, NameTarget(name), ())
+        res = self.resolver.resolve(module, NameTarget(name))
         for key in sorted(res.traversed):
             self.mark(key, Reason("keep", why))
         self._use(res)
         for mod in sorted(res.whole):
             self.make_whole(mod, why)
+        return bool(res.traversed or res.whole)
 
     def run(self) -> ShakeState:
         """Process the worklist until nothing new becomes live; return the final state."""

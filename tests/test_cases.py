@@ -71,7 +71,9 @@ class Materialized:
 
     @property
     def result(self) -> ShakeResult:
-        if self._result is None:
+        # Under mutation testing, analyses must run inside each mutant's process: a result
+        # cached before mutmut forks would hide every mutant.
+        if self._result is None or os.environ.get("MUTANT_UNDER_TEST"):
             self._result = analyze(self.entry, _options(self.case))
         return self._result
 

@@ -265,7 +265,7 @@ class RefCollector(ast.NodeVisitor):
         if found and target is None:
             return
         base = target if found and target is not None else NameTarget(name)
-        self.out.refs.append(Ref(base, attrs, line, self.fn_depth > 0))
+        self.out.refs.append(Ref(base, attrs, line))
         if name == "__file__" and not found:
             self.out.file_uses.append(line)
 
@@ -329,7 +329,7 @@ class RefCollector(ast.NodeVisitor):
             name = arg.value
             self.out.loads.update(module_prefixes(name))
             self.out.required.update(module_prefixes(name))
-            self.out.refs.append(Ref(ModuleTarget(name), (), node.lineno, self.fn_depth > 0))
+            self.out.refs.append(Ref(ModuleTarget(name), (), node.lineno))
             return
         prefix = ""
         if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Add):
@@ -425,7 +425,7 @@ class RefCollector(ast.NodeVisitor):
             self.out.eager_loads.update(loads)
         if star is not None:
             self.out.star_sources.add(star)
-            self.out.refs.append(Ref(ModuleTarget(star), (), node.lineno, self.fn_depth > 0))
+            self.out.refs.append(Ref(ModuleTarget(star), (), node.lineno))
 
     visit_ImportFrom = visit_Import
 

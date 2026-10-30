@@ -45,7 +45,6 @@ class Ref:
     base: Target
     attrs: tuple[str, ...]
     line: int
-    in_function: bool = False
 
 
 @dataclass(frozen=True)

@@ -5,6 +5,21 @@ description = "Static tree-shaking bundler for Python"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+keywords = ["bundler", "tree-shaking", "aws-lambda", "zipapp", "dead-code"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Topic :: Software Development :: Build Tools",
+  "Typing :: Typed",
+]
 dependencies = []
 
 [project.scripts]
@@ -42,9 +57,37 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers -m 'not nightly'"
+minversion = "8.0"
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config",
+  "--import-mode=importlib",
+  "-m", "not nightly",
+  "-p", "no:legacypath",
+]
+xfail_strict = true
+filterwarnings = ["error"]
+timeout = 300
 markers = [
   "nightly: slow tier (corpus, long fuzz); run with -m nightly",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["shakeout"]
+parallel = true
+concurrency = ["multiprocessing"]
+patch = ["subprocess"]  # measure `python -m shakeout` runs started by the CLI tests
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 96
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "@overload",
 ]
 
 [tool.ruff]
@@ -78,7 +121,9 @@ ignore = [
   "INP001",   # tests/ is not a package-installed namespace
 ]
 "src/shakeout/cli.py" = ["T201"]  # a CLI prints
-"src/shakeout/runtime.py" = ["D"]  # embedded into bundles: a docstring would become __doc__
+"src/shakeout/runtime.py" = ["D"]
+# Vulture whitelists are bare attribute expressions by design.
+"vulture_whitelist.py" = ["B018", "SLF001", "INP001"]  # embedded into bundles: a docstring would become __doc__
 # ast.NodeVisitor dictates visit_<Node> names; they implement dispatch, not a public API
 "src/shakeout/analysis/scopes.py" = ["N802", "N815", "D102"]
 
@@ -127,3 +172,13 @@ enable_error_code = [
   "possibly-undefined", "redundant-self", "explicit-override", "unused-awaitable",
   "unimported-reveal", "mutable-override", "exhaustive-match",
 ]
+
+[tool.mutmut]
+source_paths = ["src/shakeout/analysis/effects.py", "src/shakeout/analysis/classes.py", "src/shakeout/graph.py"]
+pytest_add_cli_args = ["-p", "no:randomly", "-p", "no:cacheprovider", "-m", "not nightly"]
+pytest_add_cli_args_test_selection = [
+  "tests/unit/test_effects.py", "tests/unit/test_classes.py", "tests/unit/test_emit_properties.py",
+  "tests/unit/test_config_and_cli.py", "tests/test_cases.py",
+  "-k", "expectations or golden or effects or classes or more_keeps or keep",
+]
+also_copy = ["tests", "src/shakeout"]

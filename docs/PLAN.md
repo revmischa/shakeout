@@ -309,11 +309,13 @@ Principles:
 A small DSL keeps these tests readable:
 
 ```python
-proj = project({
-    "main.py": "from lib import used\nused()",
-    "lib/__init__.py": "from .core import used, unused",
-    "lib/core.py": "def used(): print('hi')\ndef unused(): ...",
-})
+proj = project(
+    {
+        "main.py": "from lib import used\nused()",
+        "lib/__init__.py": "from .core import used, unused",
+        "lib/core.py": "def used(): print('hi')\ndef unused(): ...",
+    }
+)
 result = shake(proj, entry="main.py")
 assert result.removed == {"lib.core:unused"}
 assert result.kept_reason("lib.core:used").chain == ["main.py@L1", "lib/__init__.py@L1"]

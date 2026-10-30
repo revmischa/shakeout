@@ -7,7 +7,7 @@ import sys
 import traceback
 from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 import pytest
 
@@ -16,7 +16,7 @@ from tests.harness.project import write_project
 from tests.harness.run import run_python
 
 if TYPE_CHECKING:
-    from types import ModuleType
+    from types import ModuleType, TracebackType
 
 RUNTIME = Path(__file__).resolve().parents[2] / "src" / "shakeout" / "runtime.py"
 
@@ -114,3 +114,70 @@ def test_bundle_globals_are_clean(tmp_path: Path) -> None:
     )
     built = build(src / "main.py", tmp_path / "out")
     assert run_python(built.run_path, cwd=tmp_path).stdout == "[]\n"
+
+
+class Importer(Protocol):
+    def find_spec(self, fullname: str, path: object = None, target: object = None) -> object: ...
+    def get_source(self, fullname: str) -> str | None: ...
+    def is_package(self, fullname: str) -> bool: ...
+
+
+class RuntimeClass(Protocol):
+    excepthook: Callable[[type[BaseException], BaseException, TracebackType | None], None]
+
+
+def _importer() -> Importer:
+    found = next(f for f in sys.meta_path if type(f).__name__ == "_ShakeoutRuntime")
+    return cast("Importer", found)
+
+
+def _runtime_namespace() -> dict[str, object]:
+    ns: dict[str, object] = {}
+    exec(compile(RUNTIME.read_text(), str(RUNTIME), "exec"), ns)  # noqa: S102 - loads it
+    return ns
+
+
+def test_import_error_for_removed_name_gets_note(bootstrap: Bootstrap) -> None:
+    modules = {"rt_lib": ("rt_lib.py", False, ((1, "VISIBLE = 1\n"),))}
+    entry = ("main.py", ((1, "from rt_lib import hidden\n"),))
+    meta = {"tombstones": {"rt_lib": {"hidden": ["rt_lib.py", 3]}}}
+    with pytest.raises(ImportError) as info:
+        bootstrap(modules, entry, meta, {"__name__": "__rt__"})
+    if sys.version_info >= (3, 11):
+        assert "keep = ['rt_lib:hidden']" in info.value.__notes__[0]
+
+
+def test_unrelated_errors_get_no_note(bootstrap: Bootstrap) -> None:
+    entry = ("main.py", ((1, "raise KeyError('x')\n"),))
+    with pytest.raises(KeyError) as info:
+        bootstrap({}, entry, {"tombstones": {}}, {"__name__": "__rt__"})
+    assert not getattr(info.value, "__notes__", None)
+
+
+def test_without_embedded_source_lines_are_hidden(bootstrap: Bootstrap) -> None:
+    modules = {"rt_quiet": ("rt_quiet.py", False, ((1, "def f():\n    return 1\n"),))}
+    entry = ("main.py", ((1, "import rt_quiet\n"),))
+    bootstrap(modules, entry, {"embed_source": False}, {"__name__": "__rt__"})
+    assert linecache.getline("rt_quiet.py", 1) == ""
+    importer = _importer()
+    assert importer.get_source("rt_quiet") is None
+    assert importer.get_source("not_bundled") is None
+
+
+def test_importer_protocol_details(bootstrap: Bootstrap) -> None:
+    modules = {"rt_pkg2": ("rt_pkg2/__init__.py", True, ((2, "X = 2\n"),))}
+    bootstrap(modules, ("main.py", ()), {}, {"__name__": "__rt__"})
+    importer = _importer()
+    assert importer.find_spec("elsewhere") is None
+    assert importer.is_package("rt_pkg2")
+    assert importer.get_source("rt_pkg2") == "\nX = 2\n"
+
+
+def test_excepthook_prints_traceback(capsys: pytest.CaptureFixture[str]) -> None:
+    hook = cast("RuntimeClass", _runtime_namespace()["_ShakeoutRuntime"]).excepthook
+    try:
+        msg = "boom"
+        raise ValueError(msg)  # noqa: TRY301 - need a real traceback
+    except ValueError as exc:
+        hook(ValueError, exc, exc.__traceback__)
+    assert "ValueError: boom" in capsys.readouterr().err
