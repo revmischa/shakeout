@@ -5,14 +5,13 @@ from __future__ import annotations
 import runpy
 import stat
 import zipfile
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from shakeout.emit import write_manifest
 from shakeout.emit.tree import write_tree
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from shakeout.emit import BuildResult
     from shakeout.result import ShakeResult
 
@@ -43,8 +42,18 @@ def _shakeout_register_sources(loader, main_file, names, eager):
             linecache.cache[key] = (lambda name=name: read(name),)
 
 
+def _shakeout_traceback_hook(exc_type, exc, tb):
+    # Before 3.13 the default hook is C code that reads source from disk, not linecache.
+    import traceback
+
+    traceback.print_exception(exc_type, exc, tb)
+
+
 _shakeout_register_sources(__loader__, __file__, {names!r}, {eager!r})
-del _shakeout_register_sources
+import sys
+
+if sys.version_info < (3, 13) and sys.excepthook is sys.__excepthook__:
+    sys.excepthook = _shakeout_traceback_hook
 
 import runpy
 
@@ -65,6 +74,13 @@ def _zip_dir(
     with dest.open("wb") as fh:
         fh.write(prefix)
         with zipfile.ZipFile(fh, "w", zipfile.ZIP_DEFLATED) as zf:
+            # Directory entries: zipimport before 3.14 needs them to find namespace packages.
+            for directory in sorted({p.parent.relative_to(src) for p in files} - {Path()}):
+                for parent in (*reversed(directory.parents[:-1]), directory):
+                    dir_info = _info(parent.as_posix() + "/")
+                    if dir_info.filename not in zf.NameToInfo:
+                        dir_info.external_attr = 0o40755 << 16
+                        zf.writestr(dir_info, b"")
             for name, text in sorted((extra or {}).items()):
                 zf.writestr(_info(name), text)
             for path in files:

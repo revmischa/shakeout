@@ -1,4 +1,4 @@
-"""Small shims for older supported Python versions (shakeout has no runtime dependencies)."""
+"""Small shims for older supported Python versions (no extra runtime dependencies)."""
 
 from __future__ import annotations
 

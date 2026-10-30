@@ -71,4 +71,4 @@ watch real programs run.
 | See what is kept and why | `shakeout report app.py`, `shakeout why app.py pkg.mod:name` |
 | Restore original lines in a traceback | `shakeout trace tb.txt --manifest dist/main.manifest.json` |
 
-shakeout supports CPython 3.10 through 3.15 and has no runtime dependencies.
+shakeout supports CPython 3.10 through 3.15. Its only runtime dependency is `tomli`, on Python 3.10.

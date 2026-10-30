@@ -1,6 +1,6 @@
 # Installation
 
-shakeout is a command-line tool with no runtime dependencies. It needs CPython 3.10 or newer.
+shakeout is a command-line tool for CPython 3.10 or newer. Its only dependency is `tomli`, on 3.10.
 
 === "uvx (no install)"
 

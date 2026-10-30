@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -38,11 +39,13 @@ def test_bundled_shakeout_reproduces_its_own_output(tmp_path: Path, tool_target:
             "shakeout_main.py": "from shakeout.cli import main\n\nraise SystemExit(main())\n",
         },
     )
+    # On 3.10 shakeout reads TOML with tomli; bundle (and shake) it too.
+    include = ("tomli",) if sys.version_info < (3, 11) else ()
     tool = build(
         tool_src / "shakeout_main.py",
         root / "tool-out",
         target=tool_target,
-        options=Options(roots=(str(SRC),)),
+        options=Options(roots=(str(SRC),), include=include),
     )
     sample = write_project(root / "sample", SAMPLE)
     for target in ("single", "tree"):
