@@ -21,7 +21,7 @@ from .analysis.effects import (
     qualify_target,
 )
 from .analysis.scopes import ImportContext, attribute_chain, collect, module_bindings
-from .graph import Reason, Resolver, Shaker, StmtKey
+from .graph import Reason, Resolver, Shaker, StmtKey, is_rewritable_import
 from .model import Diagnostic, DynamicUse, Module, ModuleTarget, NameTarget, Ref, Statement
 from .options import Options
 from .resolve import Found, ModuleFinder, display_filename, is_pure_external, is_stdlib
@@ -51,7 +51,74 @@ class ShakeResult:
     live: set[StmtKey]
     reasons: dict[StmtKey, Reason]
     diagnostics: list[Diagnostic]
-    externals: dict[str, str] = field(default_factory=dict)  # name -> "stdlib"/"third-party"/...
+    externals: dict[str, str] = field(default_factory=dict[str, str])  # name -> "stdlib"/"third-party"/...
+    whole: set[str] = field(default_factory=set[str])
+    used: dict[StmtKey, set[str]] = field(default_factory=dict[StmtKey, set[str]])
+    _rewrites: dict[StmtKey, tuple[str, frozenset[str]] | None] = field(
+        default_factory=dict[StmtKey, tuple[str, frozenset[str]] | None])
+
+    # -- import rewriting ------------------------------------------------------------------
+    def rewrite(self, st: Statement) -> tuple[str, frozenset[str]] | None:
+        """(replacement source, dropped names) for a kept import with unused names, else None.
+
+        ``from m import a, b`` with only ``a`` used becomes ``from m import a``. If no name is
+        used the statement only runs for its side effects and becomes ``import m as _shakeout_N``.
+        Imports of external modules are never rewritten (a missing name must still fail), and a
+        dropped submodule with side effects is still imported.
+        """
+        key = (st.module, st.index)
+        if key not in self._rewrites:
+            self._rewrites[key] = self._compute_rewrite(st)
+        return self._rewrites[key]
+
+    def _compute_rewrite(self, st: Statement) -> tuple[str, frozenset[str]] | None:
+        key = (st.module, st.index)
+        if (not self.options.shake or key not in self.live or st.module in self.whole
+                or not is_rewritable_import(st)):
+            return None
+        node = st.nodes[0]
+        used = self.used.get(key, set())
+        mod = self.modules[st.module]
+        alias_name = f"_shakeout_import_{st.start}"
+        keep: list[ast.alias] = []
+        dropped: set[str] = set()
+        if isinstance(node, ast.ImportFrom):
+            base = ImportContext(mod.name, mod.is_package).absolute(node.level, node.module)
+            if base is None or base not in self.modules:
+                return None
+            for a in node.names:
+                bound = a.asname or a.name
+                sub = self.modules.get(f"{base}.{a.name}")
+                if bound in used or (sub is not None and sub.has_effects):
+                    keep.append(a)
+                else:
+                    dropped.add(bound)
+            if not dropped:
+                return None
+            if keep:
+                new: ast.stmt = ast.ImportFrom(module=node.module, names=keep, level=node.level)
+            else:
+                new = ast.Import(names=[ast.alias(name=base, asname=alias_name)])
+        else:
+            # ``import x`` never needs attributes to exist, so only names of pure (droppable)
+            # bundled modules are removed; everything else stays verbatim, which also keeps
+            # traceback text exact for errors raised while importing.
+            assert isinstance(node, ast.Import)
+            for a in node.names:
+                bound = a.asname or a.name.split(".")[0]
+                effectful = any(self.modules[p].has_effects for p in _prefixes(a.name)
+                                if p in self.modules)
+                if bound in used or a.name not in self.modules or effectful:
+                    keep.append(a)
+                else:
+                    dropped.add(bound)
+            if not dropped:
+                return None
+            if not keep:
+                return ("pass  # shakeout: removed " + ast.unparse(node), frozenset(dropped))
+            new = ast.Import(names=keep)
+        note = f"  # shakeout: was {ast.unparse(node)!r}"
+        return (ast.unparse(new) + note, frozenset(dropped))
 
     # -- public, symbol-level view ---------------------------------------------------------
     @property
@@ -70,8 +137,16 @@ class ShakeResult:
         out: dict[str, bool] = {}
         for mod in self.modules.values():
             for name, idxs in mod.binders.items():
-                out[f"{mod.name}:{name}"] = any((mod.name, i) in self.live for i in idxs)
+                out[f"{mod.name}:{name}"] = any(self.binds_at_runtime(mod.statements[i], name)
+                                               for i in idxs)
         return out
+
+    def binds_at_runtime(self, st: Statement, name: str) -> bool:
+        """Whether the emitted bundle still binds ``name`` through statement ``st``."""
+        if (st.module, st.index) not in self.live:
+            return False
+        rw = self.rewrite(st)
+        return rw is None or name not in rw[1]
 
     @property
     def kept(self) -> frozenset[str]:
@@ -206,7 +281,7 @@ class Project:
             else:
                 groups.append([node])
                 spans.append((start, end))
-        for index, (nodes, (start, end)) in enumerate(zip(groups, spans)):
+        for index, (nodes, (start, end)) in enumerate(zip(groups, spans, strict=False)):
             st = Statement(mod.name, index, mod.origin or Path(mod.filename), start, end, nodes,
                            kind="other")
             for node in nodes:
@@ -418,7 +493,9 @@ class Project:
         effectful: set[str] = set()
 
         def import_reason(st: Statement) -> str | None:
-            for name in sorted(st.eager_loads):
+            # A module and its parent packages are already loaded while it executes.
+            already = set(_prefixes(st.module))
+            for name in sorted(st.eager_loads - already):
                 if name in self.modules:
                     if name in effectful:
                         return f"imports {name!r}, which has side effects"
@@ -472,7 +549,8 @@ class Project:
                 st.kept = (mod.name, st.index) in state.live
         self._diagnose(state.live, state.loaded)
         return ShakeResult(self.entry, self.options, self.modules, state.loaded, state.live,
-                           state.reasons, self.diagnostics, dict(self.externals))
+                           state.reasons, self.diagnostics, dict(self.externals),
+                           set(state.whole), {k: set(v) for k, v in state.used.items()})
 
     def _diagnose(self, live: set[StmtKey], loaded: set[str]) -> None:
         for spec in self.options.keep:

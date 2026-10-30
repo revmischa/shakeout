@@ -74,12 +74,13 @@ class Statement:
     end: int
     nodes: list[ast.stmt]
     kind: str
-    binds: dict[str, list[ImportTarget | None]] = field(default_factory=dict)
-    refs: list[Ref] = field(default_factory=list)
-    loads: set[str] = field(default_factory=set)
-    eager_loads: set[str] = field(default_factory=set)
-    required: set[str] = field(default_factory=set)  # names that must be modules
-    dynamic: list[DynamicUse] = field(default_factory=list)
+    binds: dict[str, list[ImportTarget | None]] = field(
+        default_factory=dict[str, list[ImportTarget | None]])
+    refs: list[Ref] = field(default_factory=list[Ref])
+    loads: set[str] = field(default_factory=set[str])
+    eager_loads: set[str] = field(default_factory=set[str])
+    required: set[str] = field(default_factory=set[str])  # names that must be modules
+    dynamic: list[DynamicUse] = field(default_factory=list[DynamicUse])
     impure: str | None = None  # reason it has side effects, None when pure
     root: str | None = None  # reason it is always kept once its module loads
     dead: bool = False  # never executes (non-entry __main__ guard)
@@ -100,10 +101,10 @@ class Module:
     is_package: bool
     source: str
     is_entry: bool = False
-    statements: list[Statement] = field(default_factory=list)
-    binders: dict[str, list[int]] = field(default_factory=dict)
-    dynamic: list[DynamicUse] = field(default_factory=list)
-    file_uses: list[int] = field(default_factory=list)
+    statements: list[Statement] = field(default_factory=list[Statement])
+    binders: dict[str, list[int]] = field(default_factory=dict[str, list[int]])
+    dynamic: list[DynamicUse] = field(default_factory=list[DynamicUse])
+    file_uses: list[int] = field(default_factory=list[int])
     has_star_import: bool = False
     has_effects: bool = False
     whole_reason: str | None = None  # kept entirely, e.g. because it calls globals()

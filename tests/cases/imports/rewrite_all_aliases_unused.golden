@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  ~ L1-4      from lib import (  [root: imports 'lib', which has side effects]  -> import lib as _shakeout_import_1  # shakeout: was 'from lib import a, b'
+  + L6        print("done")  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        print("lib loaded")  [root: expr statement at module level]
+  - L4-5      def a():
+  - L8-9      def b():

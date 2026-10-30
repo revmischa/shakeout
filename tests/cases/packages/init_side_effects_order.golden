@@ -5,4 +5,4 @@ module pkg [pkg/__init__.py] bundled
   + L1        print("pkg init")  [root: expr statement at module level]
 module pkg.sub [pkg/sub.py] bundled
   + L1        print("sub init")  [root: expr statement at module level]
-  + L4-5      def f():  [imported by __main__@L1-L1]
+  + L4-5      def f():  [used as f]

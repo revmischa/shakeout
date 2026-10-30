@@ -1,0 +1,18 @@
+description = "a kept import drops the names nobody uses, so their definitions can be removed"
+removed = ["lib:unused", "__main__:unused"]
+kept = ["lib:used", "__main__:used"]
+stdout = "lib loaded\nused\n"
+=== main.py
+from lib import used, unused
+
+used()
+=== lib.py
+print("lib loaded")
+
+
+def used():
+    print("used")
+
+
+def unused():
+    print("unused")

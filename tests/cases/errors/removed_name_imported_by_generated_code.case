@@ -1,0 +1,20 @@
+description = "a removed name imported by exec'd generated code gets a note naming the keep option"
+stdout = "visible\nhidden\n"
+equivalent = false
+noshake_equivalent = true
+soundness = false
+bundle_exit_code = 1
+bundle_stderr_contains = ["cannot import name 'hidden'", "shakeout:", "keep = ['lib:hidden']"]
+targets = ["single"]
+=== main.py
+import lib
+
+lib.visible()
+exec(compile("from lib import hidden\nhidden()", "<generated>", "exec"), {})
+=== lib.py
+def visible():
+    print("visible")
+
+
+def hidden():
+    print("hidden")

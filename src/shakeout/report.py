@@ -19,7 +19,8 @@ def render_report(result: ShakeResult) -> str:
         out.append(f"module {name} [{mod.filename}] {status}{extra}")
         lines = mod.lines
         for st in mod.statements:
-            mark = "+" if st.kept else "-"
+            rw = result.rewrite(st)
+            mark = "~" if rw else "+" if st.kept else "-"
             text = _first_line("".join(lines[st.start - 1 : st.end]))
             span = f"L{st.start}-{st.end}" if st.end != st.start else f"L{st.start}"
             why = ""
@@ -29,6 +30,8 @@ def render_report(result: ShakeResult) -> str:
                 if reason.kind == "ref" and not why.startswith("imported by"):
                     why = f"used as {why}"
                 why = f"  [{reason.kind}: {why}]" if reason.kind != "ref" else f"  [{why}]"
+            if rw:
+                why += f"  -> {rw[0]}"
             elif st.dead:
                 why = "  [dead: not the entry module]"
             out.append(f"  {mark} {span:<9} {text}{why}".rstrip())

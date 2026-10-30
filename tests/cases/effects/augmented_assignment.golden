@@ -2,5 +2,5 @@ module __main__ [main.py] bundled
   + L1        from lib import N  [root: imports 'lib', which has side effects]
   + L3        print(N)  [root: expr statement at module level]
 module lib [lib.py] bundled
-  + L1        N = 1  [imported by __main__@L1-L1]
+  + L1        N = 1  [used as N]
   + L2        N += 2  [root: augassign statement at module level]

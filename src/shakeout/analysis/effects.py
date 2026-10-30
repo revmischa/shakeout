@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import ast
 from collections.abc import Callable
+from typing import cast
 
 from ..model import FromTarget, ImportTarget, ModuleTarget
 
@@ -183,12 +184,12 @@ class EffectRules:
 
     def assignment_effect(self, stmt: ast.Assign | ast.AnnAssign) -> str | None:
         if isinstance(stmt, ast.Assign):
-            targets: list[ast.expr] = stmt.targets
+            targets: list[ast.expr] = list(stmt.targets)
             value = stmt.value
         else:
             if stmt.value is None and isinstance(stmt.target, ast.Name):
                 return None
-            targets, value = [stmt.target], stmt.value
+            targets, value = [cast(ast.expr, stmt.target)], stmt.value
         for t in targets:
             for sub in ast.walk(t):
                 if isinstance(sub, (ast.Attribute, ast.Subscript)):

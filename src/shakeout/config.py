@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _KEYS = {
     "entry": str, "target": str, "out": str, "keep": list, "include": list,
@@ -24,23 +24,30 @@ def find_pyproject(start: Path) -> Path | None:
     return None
 
 
-def load_config(pyproject: Path | None) -> dict[str, Any]:
-    if pyproject is None:
-        return {}
+def _parse_toml(path: Path) -> dict[str, Any]:
     if sys.version_info >= (3, 11):
         import tomllib
     else:  # pragma: no cover
         try:
-            import tomli as tomllib
+            import tomli as tomllib  # pyright: ignore[reportMissingImports]
         except ImportError:
             return {}
     try:
-        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-    except tomllib.TOMLDecodeError as exc:
-        raise ConfigError(f"{pyproject}: {exc}") from exc
-    section = data.get("tool", {}).get("shakeout", {})
-    if not isinstance(section, dict):
+        loads: Any = tomllib.loads  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+        return cast(dict[str, Any], loads(path.read_text(encoding="utf-8")))
+    except ValueError as exc:  # tomllib.TOMLDecodeError subclasses ValueError
+        raise ConfigError(f"{path}: {exc}") from exc
+
+
+def load_config(pyproject: Path | None) -> dict[str, Any]:
+    if pyproject is None:
+        return {}
+    data = _parse_toml(pyproject)
+    tool: object = data.get("tool", {})
+    raw: object = cast(dict[str, Any], tool).get("shakeout", {}) if isinstance(tool, dict) else {}
+    if not isinstance(raw, dict):
         raise ConfigError(f"{pyproject}: [tool.shakeout] must be a table")
+    section = cast(dict[str, Any], raw)
     for key, value in section.items():
         if key not in _KEYS:
             raise ConfigError(f"{pyproject}: unknown [tool.shakeout] key {key!r}")

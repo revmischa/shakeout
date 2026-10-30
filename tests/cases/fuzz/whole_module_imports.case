@@ -1,0 +1,74 @@
+description = "found by fuzzing: imports inside a module kept whole (globals()) keep what they import"
+kept = ["m1:f1_0", "m0:f0_2"]
+stdout = "result 0\nplugins []\n"
+=== main.py
+import reg
+import m0
+
+print('result', m0.C0_0)
+for _k in sorted(reg.REGISTRY):
+    print('registered', _k, reg.REGISTRY[_k]())
+print('plugins', sorted(reg.Plugin.seen))
+=== m0.py
+import reg
+def _n(v):
+    return v if isinstance(v, int) else 0
+
+
+
+C0_0 = 0
+
+
+def f0_1():
+    print('f0_1')
+    return globals()['f0_1'].__name__.count('_') + 0
+
+
+from m1 import f1_0 as f0_2
+=== m1.py
+import reg
+def _n(v):
+    return v if isinstance(v, int) else 0
+
+
+
+def f1_0():
+    print('f1_0')
+    return 0
+=== zz_unused_m2.py
+import reg
+def _n(v):
+    return v if isinstance(v, int) else 0
+
+
+
+def f2_0():
+    print('f2_0')
+    return 0
+=== m3.py
+import reg
+def _n(v):
+    return v if isinstance(v, int) else 0
+
+
+
+def f3_0():
+    print('f3_0')
+    return 0
+=== reg.py
+REGISTRY = {}
+
+
+def register(fn):
+    REGISTRY[fn.__name__] = fn
+    return fn
+
+
+class Plugin:
+    seen = []
+
+    def __init_subclass__(cls):
+        Plugin.seen.append(cls.__name__)
+
+    def run(self):
+        return 0

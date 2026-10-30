@@ -1,0 +1,6 @@
+# Per-driver shakeout options. Every keep entry must say why static analysis cannot see the use.
+
+[jinja]
+# jinja2.compiler emits "from jinja2.runtime import <names in runtime.exported>" into the source
+# of every compiled template, which is then exec()'d: the imports exist only as strings.
+keep = ["jinja2.runtime"]

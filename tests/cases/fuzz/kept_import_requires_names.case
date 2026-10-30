@@ -1,6 +1,6 @@
-description = "found by fuzzing: an import kept for its side effects still needs the names it imports"
-kept = ["m2:f2_0", "m0:f0_2"]
-removed = ["m0:f0_1"]
+description = "found by fuzzing: an import kept for its side effects must not fail on names whose definitions were removed"
+removed = ["m0:f0_1", "m0:f0_2", "m2:f2_0"]
+kept = ["m2:f2_1"]
 stdout = "f0_0\nresult 0\nf2_1\nregistered f2_1 0\n"
 === main.py
 import reg

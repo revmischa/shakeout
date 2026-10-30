@@ -1,0 +1,8 @@
+module __main__ [main.py] bundled, kept whole: main.py:4 calls exec()
+  + L1        import lib  [whole: main.py:4 calls exec()]
+  + L3        lib.visible()  [root: expr statement at module level]
+  + L4        exec(compile("from lib import hidden\nhidden(...  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1-2      def visible():  [used as lib.visible]
+  - L5-6      def hidden():
+info: kept __main__ whole: main.py:4 calls exec()

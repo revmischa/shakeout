@@ -1,0 +1,7 @@
+module __main__ [main.py] bundled
+  ~ L1        from lib import used, unused  [root: imports 'lib', which has side effects]  -> from lib import used  # shakeout: was 'from lib import used, unused'
+  + L3        used()  [root: expr statement at module level]
+module lib [lib.py] bundled
+  + L1        print("lib loaded")  [root: expr statement at module level]
+  + L4-5      def used():  [used as used]
+  - L8-9      def unused():

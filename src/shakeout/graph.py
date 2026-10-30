@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 from collections import deque
 from dataclasses import dataclass, field
 
@@ -15,14 +16,16 @@ _WHOLE_MODULE_ATTRS = frozenset({"__dict__"})
 
 @dataclass
 class Resolution:
-    traversed: set[StmtKey] = field(default_factory=set)  # binders passed through (incl. imports)
-    terminal: set[StmtKey] = field(default_factory=set)  # binders that define a value locally
-    whole: set[str] = field(default_factory=set)  # modules escaping as values
+    traversed: set[StmtKey] = field(default_factory=set[StmtKey])  # binders passed through (incl. imports)
+    terminal: set[StmtKey] = field(default_factory=set[StmtKey])  # binders that define a value locally
+    whole: set[str] = field(default_factory=set[str])  # modules escaping as values
+    names: set[tuple[str, int, str]] = field(default_factory=set[tuple[str, int, str]])  # (module, stmt, bound name)
 
     def merge(self, other: Resolution) -> None:
         self.traversed |= other.traversed
         self.terminal |= other.terminal
         self.whole |= other.whole
+        self.names |= other.names
 
 
 class Resolver:
@@ -62,6 +65,7 @@ class Resolver:
         res = Resolution()
         for idx in mod.binders.get(name, ()):
             res.traversed.add((module, idx))
+            res.names.add((module, idx, name))
             for target in mod.statements[idx].binds[name]:
                 if target is None:
                     res.terminal.add((module, idx))
@@ -84,10 +88,11 @@ class Reason:
 
 @dataclass
 class ShakeState:
-    live: set[StmtKey] = field(default_factory=set)
-    loaded: set[str] = field(default_factory=set)
-    whole: set[str] = field(default_factory=set)
-    reasons: dict[StmtKey, Reason] = field(default_factory=dict)
+    live: set[StmtKey] = field(default_factory=set[StmtKey])
+    loaded: set[str] = field(default_factory=set[str])
+    whole: set[str] = field(default_factory=set[str])
+    reasons: dict[StmtKey, Reason] = field(default_factory=dict[StmtKey, Reason])
+    used: dict[StmtKey, set[str]] = field(default_factory=dict[StmtKey, set[str]])  # bound names actually used
 
 
 class Shaker:
@@ -122,7 +127,10 @@ class Shaker:
             return
         self.state.whole.add(module)
         for st in self.modules[module].statements:
-            self.mark((module, st.index), Reason("whole", why))
+            key = (module, st.index)
+            self.mark(key, Reason("whole", why))
+            for name in sorted(st.binds):  # whole modules are emitted verbatim
+                self._use_name(key, name)
 
     def mark(self, key: StmtKey, reason: Reason) -> None:
         if key in self.state.live or self.stmt(key).dead:
@@ -136,6 +144,7 @@ class Shaker:
         res = self.resolver.resolve(module, NameTarget(name), ())
         for key in sorted(res.traversed):
             self.mark(key, Reason("keep", f"keep option {module}:{name}"))
+        self._use(res, None)
         for mod in sorted(res.whole):
             self.make_whole(mod, f"keep option {module}:{name}")
 
@@ -146,28 +155,60 @@ class Shaker:
             self.load(st.module)
             for name in sorted(st.loads):
                 self.load(name)
-            self._require_imported_names(key, st)
+            if is_rewritable_import(st):
+                for name in sorted(self.state.used.get(key, ())):
+                    self._require_name(key, st, name)
+            else:
+                for name in sorted(st.binds):
+                    self._require_name(key, st, name)
             for ref in st.refs:
                 res = self.resolver.resolve_ref(st.module, ref)
                 label = ".".join((_base_name(ref), *ref.attrs))
                 for target in sorted(res.traversed):
                     self.mark(target, Reason("ref", label, key))
+                self._use(res, key)
                 for mod in sorted(res.whole):
                     self.make_whole(mod, f"module object used as a value ({label}) at {st.id}")
         return self.state
 
 
-    def _require_imported_names(self, key: StmtKey, st: Statement) -> None:
+    def _use(self, res: Resolution, parent: StmtKey | None) -> None:
+        """Record which bound names were used; a used ``from x import y`` needs ``y`` to exist."""
+        for module, idx, name in sorted(res.names):
+            self._use_name((module, idx), name)
+
+    def _use_name(self, key: StmtKey, name: str) -> None:
+        used = self.state.used.setdefault(key, set())
+        if name in used:
+            return
+        used.add(name)
+        st = self.stmt(key)
+        if key in self.state.live and is_rewritable_import(st):
+            self._require_name(key, st, name)
+
+    def _require_name(self, key: StmtKey, st: Statement, name: str) -> None:
         """A kept ``from x import y`` fails at runtime unless ``y`` exists, so keep its binders.
 
-        (A submodule only has to be loaded, which ``loads`` already guarantees.)
+        Rewritable imports only require the names that are used (the rest are dropped from the
+        statement when it is emitted); other statements require every name they import. A
+        submodule only has to be loaded, which ``loads`` already guarantees.
         """
-        for name in sorted(st.binds):
-            for target in st.binds[name]:
-                if isinstance(target, FromTarget):
-                    res = self.resolver.resolve(st.module, target, ())
-                    for binder in sorted(res.traversed):
-                        self.mark(binder, Reason("ref", f"imported by {st.id}", key))
+        for target in st.binds.get(name, ()):
+            if isinstance(target, FromTarget):
+                res = self.resolver.resolve(st.module, target, ())
+                for binder in sorted(res.traversed):
+                    self.mark(binder, Reason("ref", f"imported by {st.id}", key))
+                self._use(res, key)
+
+
+def is_rewritable_import(st: Statement) -> bool:
+    """A single top-level import statement whose unused names can be dropped when emitted."""
+    if st.kind != "import" or len(st.nodes) != 1:
+        return False
+    node = st.nodes[0]
+    if isinstance(node, ast.ImportFrom):
+        return node.module != "__future__" and all(a.name != "*" for a in node.names)
+    return isinstance(node, ast.Import)
 
 
 def _base_name(ref: Ref) -> str:

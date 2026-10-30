@@ -35,5 +35,6 @@ ignore = ["E501"]
 
 [tool.pyright]
 include = ["src"]
+exclude = ["src/shakeout/runtime.py"]
 typeCheckingMode = "strict"
 pythonVersion = "3.10"

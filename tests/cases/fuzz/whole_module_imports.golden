@@ -1,0 +1,21 @@
+module __main__ [main.py] bundled
+  + L1        import reg  [used as reg.REGISTRY]
+  + L2        import m0  [used as m0.C0_0]
+  + L4        print('result', m0.C0_0)  [root: expr statement at module level]
+  + L5-6      for _k in sorted(reg.REGISTRY):  [root: for statement at module level]
+  + L7        print('plugins', sorted(reg.Plugin.seen))  [root: expr statement at module level]
+module m0 [m0.py] bundled, kept whole: m0.py:12 calls globals()
+  + L1        import reg  [whole: m0.py:12 calls globals()]
+  + L2-3      def _n(v):  [whole: m0.py:12 calls globals()]
+  + L7        C0_0 = 0  [used as m0.C0_0]
+  + L10-12    def f0_1():  [whole: m0.py:12 calls globals()]
+  + L15       from m1 import f1_0 as f0_2  [whole: m0.py:12 calls globals()]
+module m1 [m1.py] bundled
+  - L1        import reg
+  - L2-3      def _n(v):
+  + L7-9      def f1_0():  [imported by m0@L15-L15]
+module reg [reg.py] bundled
+  + L1        REGISTRY = {}  [used as reg.REGISTRY]
+  - L4-6      def register(fn):
+  + L9-16     class Plugin:  [used as reg.Plugin.seen]
+info: kept m0 whole: m0.py:12 calls globals()

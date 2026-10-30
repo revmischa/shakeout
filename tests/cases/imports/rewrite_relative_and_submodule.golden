@@ -1,0 +1,12 @@
+module __main__ [main.py] bundled
+  + L1        import pkg  [root: imports 'pkg', which has side effects]
+  + L3        print(pkg.ok())  [root: expr statement at module level]
+module pkg [pkg/__init__.py] bundled
+  + L1        from . import sub  [root: imports 'pkg.sub', which has side effects]
+  ~ L2        from .helpers import ok, unused  [root: imports 'pkg.helpers', which has side effects]  -> from .helpers import ok  # shakeout: was 'from .helpers import ok, unused'
+module pkg.helpers [pkg/helpers.py] bundled
+  + L1        print("helpers loaded")  [root: expr statement at module level]
+  + L4-5      def ok():  [used as pkg.ok]
+  - L8-9      def unused():
+module pkg.sub [pkg/sub.py] bundled
+  + L1        print("pkg.sub loaded")  [root: expr statement at module level]

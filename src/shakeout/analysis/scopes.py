@@ -136,7 +136,7 @@ class _LocalsFinder(ast.NodeVisitor):
     def _visit_comp(self, node: ast.AST) -> None:
         # Only walrus targets escape a comprehension into the enclosing function.
         for sub in _walk_no_nested_funcs(node):
-            if isinstance(sub, ast.NamedExpr) and isinstance(sub.target, ast.Name):
+            if isinstance(sub, ast.NamedExpr):
                 self._bind(sub.target.id)
 
     visit_ListComp = visit_SetComp = visit_GeneratorExp = visit_DictComp = _visit_comp
@@ -205,14 +205,14 @@ def function_scope(
 
 @dataclass
 class Collected:
-    refs: list[Ref] = field(default_factory=list)
-    loads: set[str] = field(default_factory=set)
-    eager_loads: set[str] = field(default_factory=set)
-    required: set[str] = field(default_factory=set)
-    star_sources: set[str] = field(default_factory=set)
-    dynamic: list[DynamicUse] = field(default_factory=list)
-    file_uses: list[int] = field(default_factory=list)
-    globals_declared: set[str] = field(default_factory=set)
+    refs: list[Ref] = field(default_factory=list[Ref])
+    loads: set[str] = field(default_factory=set[str])
+    eager_loads: set[str] = field(default_factory=set[str])
+    required: set[str] = field(default_factory=set[str])
+    star_sources: set[str] = field(default_factory=set[str])
+    dynamic: list[DynamicUse] = field(default_factory=list[DynamicUse])
+    file_uses: list[int] = field(default_factory=list[int])
+    globals_declared: set[str] = field(default_factory=set[str])
 
 
 class RefCollector(ast.NodeVisitor):
@@ -271,9 +271,9 @@ class RefCollector(ast.NodeVisitor):
         if chain is not None:
             root, attrs = chain
             found, target = self._lookup(root)
-            if not attrs and not found and root in _DYNAMIC_BUILTINS:
-                if not (root == "vars" and node.args):
-                    self.out.dynamic.append(DynamicUse(_DYNAMIC_BUILTINS[root], node.lineno))
+            if (not attrs and not found and root in _DYNAMIC_BUILTINS
+                    and not (root == "vars" and node.args)):
+                self.out.dynamic.append(DynamicUse(_DYNAMIC_BUILTINS[root], node.lineno))
             is_dunder_import = not attrs and not found and root == "__import__"
             is_import_module = (attrs == ("import_module",) and (
                 (not found and root == "importlib")

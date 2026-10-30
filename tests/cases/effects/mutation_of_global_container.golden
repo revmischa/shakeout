@@ -2,5 +2,5 @@ module __main__ [main.py] bundled
   + L1        from lib import ITEMS  [root: imports 'lib', which has side effects]
   + L3        print(ITEMS)  [root: expr statement at module level]
 module lib [lib.py] bundled
-  + L1        ITEMS = [1, 2]  [imported by __main__@L1-L1]
+  + L1        ITEMS = [1, 2]  [used as ITEMS]
   + L2        ITEMS.append(3)  [root: expr statement at module level]

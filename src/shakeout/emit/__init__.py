@@ -20,8 +20,8 @@ class BuildResult:
     result: ShakeResult
     out: Path
     run_path: Path
-    runtime_files: list[str] = field(default_factory=list)
-    manifest: dict[str, object] = field(default_factory=dict)
+    runtime_files: list[str] = field(default_factory=list[str])
+    manifest: dict[str, object] = field(default_factory=dict[str, object])
 
 
 def module_chunks(
@@ -37,7 +37,13 @@ def module_chunks(
     prev_end = 0
     for st in mod.statements:
         if (st.index in kept) if kept is not None else st.kept:
-            text = "".join(lines[prev_end : st.end])
+            rw = result.rewrite(st) if kept is None else None
+            if rw is not None:
+                # Same number of lines as the original statement, so later lines don't move.
+                span = st.end - st.start + 1
+                text = "".join(lines[prev_end : st.start - 1]) + rw[0] + "\n" * span
+            else:
+                text = "".join(lines[prev_end : st.end])
             if text and not text.endswith("\n"):
                 text += "\n"
             chunks.append((prev_end + 1, text))
@@ -54,7 +60,7 @@ def tombstones(result: ShakeResult, mod: Module) -> dict[str, tuple[str, int]]:
     if mod.name not in result.loaded:
         return out
     for name, idxs in sorted(mod.binders.items()):
-        if any(mod.statements[i].kept for i in idxs):
+        if any(result.binds_at_runtime(mod.statements[i], name) for i in idxs):
             continue
         first = mod.statements[idxs[0]]
         out[name] = (mod.filename, first.start)

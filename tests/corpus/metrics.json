@@ -1,0 +1,74 @@
+{
+  "attrs": {
+    "bytes_bundled": 169784,
+    "bytes_reachable_modules": 176014,
+    "modules_bundled": 19,
+    "modules_discovered": 19,
+    "statements_kept": 236,
+    "statements_total": 253
+  },
+  "click": {
+    "bytes_bundled": 299256,
+    "bytes_reachable_modules": 347533,
+    "modules_bundled": 16,
+    "modules_discovered": 16,
+    "statements_kept": 473,
+    "statements_total": 535
+  },
+  "dateutil": {
+    "bytes_bundled": 301448,
+    "bytes_reachable_modules": 301869,
+    "modules_bundled": 16,
+    "modules_discovered": 16,
+    "statements_kept": 328,
+    "statements_total": 335
+  },
+  "idna": {
+    "bytes_bundled": 334092,
+    "bytes_reachable_modules": 333621,
+    "modules_bundled": 6,
+    "modules_discovered": 6,
+    "statements_kept": 134,
+    "statements_total": 137
+  },
+  "jinja": {
+    "bytes_bundled": 465071,
+    "bytes_reachable_modules": 488693,
+    "modules_bundled": 24,
+    "modules_discovered": 25,
+    "statements_kept": 693,
+    "statements_total": 764
+  },
+  "packaging": {
+    "bytes_bundled": 92245,
+    "bytes_reachable_modules": 126698,
+    "modules_bundled": 10,
+    "modules_discovered": 13,
+    "statements_kept": 150,
+    "statements_total": 248
+  },
+  "rich": {
+    "bytes_bundled": 1041627,
+    "bytes_reachable_modules": 1396792,
+    "modules_bundled": 91,
+    "modules_discovered": 166,
+    "statements_kept": 1064,
+    "statements_total": 1870
+  },
+  "six": {
+    "bytes_bundled": 34549,
+    "bytes_reachable_modules": 34549,
+    "modules_bundled": 1,
+    "modules_discovered": 1,
+    "statements_kept": 109,
+    "statements_total": 109
+  },
+  "tomli": {
+    "bytes_bundled": 26913,
+    "bytes_reachable_modules": 26350,
+    "modules_bundled": 4,
+    "modules_discovered": 4,
+    "statements_kept": 73,
+    "statements_total": 74
+  }
+}

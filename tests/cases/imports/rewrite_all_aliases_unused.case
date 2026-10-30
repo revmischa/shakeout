@@ -1,0 +1,20 @@
+description = "an import kept only for side effects keeps running them after its names are dropped"
+removed = ["lib:a", "lib:b", "__main__:a", "__main__:b"]
+stdout = "lib loaded\ndone\n"
+=== main.py
+from lib import (
+    a,
+    b,
+)
+
+print("done")
+=== lib.py
+print("lib loaded")
+
+
+def a():
+    pass
+
+
+def b():
+    pass

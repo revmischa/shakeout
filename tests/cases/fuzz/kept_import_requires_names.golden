@@ -6,10 +6,10 @@ module __main__ [main.py] bundled
 module m0 [m0.py] bundled
   + L1-3      def f0_0():  [used as m0.f0_0]
   - L6-8      def f0_1():
-  + L11       from m2 import f2_0 as f0_2  [root: imports 'm2', which has side effects]
+  ~ L11       from m2 import f2_0 as f0_2  [root: imports 'm2', which has side effects]  -> import m2 as _shakeout_import_11  # shakeout: was 'from m2 import f2_0 as f0_2'
 module m2 [m2.py] bundled
   + L1        import reg  [used as reg.register]
-  + L4-6      def f2_0():  [imported by m0@L11-L11]
+  - L4-6      def f2_0():
   + L9-12     @reg.register  [root: decorator 'reg.register' may have side effects]
 module reg [reg.py] bundled
   + L1        REGISTRY = {}  [used as reg.REGISTRY]

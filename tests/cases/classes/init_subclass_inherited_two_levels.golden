@@ -3,7 +3,7 @@ module __main__ [main.py] bundled
   + L2        from base import Root  [root: imports 'base', which has side effects]
   + L4        print(sorted(Root.seen))  [root: expr statement at module level]
 module base [base.py] bundled
-  + L1-5      class Root:  [imported by __main__@L2-L2]
+  + L1-5      class Root:  [used as Root.seen]
   + L8-9      class Mid(Root):  [root: base 'Root' registers subclasses (__init_subclass__/metaclass)]
 module impl [impl.py] bundled
   + L1        from base import Mid  [root: imports 'base', which has side effects]

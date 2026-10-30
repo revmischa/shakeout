@@ -75,6 +75,14 @@ def _shakeout_bootstrap(modules, entry, meta, main_globals):
                         f"imports it could not resolve at {where}. If {name!r} is one of "
                         f"them, add it to the keep option: keep = [{name!r}]"
                     )
+            elif isinstance(exc, ImportError) and name and getattr(exc, "name_from", None):
+                removed = meta.get("tombstones", {}).get(name, {}).get(exc.name_from)
+                if removed:
+                    exc.add_note(
+                        f"shakeout: {exc.name_from!r} was removed from {removed[0]}:{removed[1]} "
+                        f"because nothing references it statically (it may be imported by "
+                        f"generated code). Keep it with: keep = ['{name}:{exc.name_from}']"
+                    )
             elif isinstance(exc, NameError) and name:
                 for module, tombstones in meta.get("tombstones", {}).items():
                     if name in tombstones:

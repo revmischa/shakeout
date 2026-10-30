@@ -11,10 +11,6 @@ from . import BuildResult, build_source, manifest, module_chunks
 _RUNTIME = Path(__file__).resolve().parent.parent / "runtime.py"
 
 
-def _literal(value: object) -> str:
-    return repr(value)
-
-
 def write_single(result: ShakeResult, out: Path) -> BuildResult:
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{result.entry.stem}.py"

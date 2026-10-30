@@ -52,7 +52,7 @@ def check_program(files: dict[str, str]) -> None:
         _, records = trace_execution(src / "main.py", cwd=root / "ct")
         violations = check_soundness(records, list(result.statements))
         assert not violations, "unsound: " + "; ".join(map(str, violations))
-    except AssertionError as exc:
+    except AssertionError:
         _save_failure(files)
         raise
     finally:

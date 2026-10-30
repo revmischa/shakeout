@@ -1,0 +1,22 @@
+description = "relative imports and submodule imports are rewritten correctly"
+removed = ["pkg.helpers:unused"]
+stdout = "pkg.sub loaded\nhelpers loaded\nok\n"
+=== main.py
+import pkg
+
+print(pkg.ok())
+=== pkg/__init__.py
+from . import sub
+from .helpers import ok, unused
+=== pkg/sub.py
+print("pkg.sub loaded")
+=== pkg/helpers.py
+print("helpers loaded")
+
+
+def ok():
+    return "ok"
+
+
+def unused():
+    pass
