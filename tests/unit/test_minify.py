@@ -7,6 +7,7 @@ arguments, at the same line numbers. Docstring stripping must only change docstr
 from __future__ import annotations
 
 import dis
+import sys
 import sysconfig
 import types
 import warnings
@@ -114,3 +115,18 @@ def test_strip_docstrings(source: str, expected_doc: str | None) -> None:
     exec("".join(lines), ns)  # noqa: S102
     obj = ns.get("f", ns.get("C"))
     assert getattr(obj, "__doc__", None) == expected_doc
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="multi-line f-string expressions are 3.12+")
+def test_minify_keeps_f_string_debug_text_verbatim() -> None:
+    # Found on macOS CI (Homebrew ships CPython's own test suite): the source text of a
+    # self-documenting f-string expression, trailing spaces and comments included, is part of
+    # the string value.
+    source = 'x = f"""{1+2 = \n  }"""\ny = f"{(\n  1  # note\n)=}"\n'
+    lines, verbatim = minify_lines(source, strip_docstrings=False)
+    rebuilt = build_source(drop_blank_lines([(1, "".join(lines))], verbatim))
+    ns: dict[str, object] = {}
+    exec(rebuilt, ns)  # noqa: S102
+    expected: dict[str, object] = {}
+    exec(source, expected)  # noqa: S102
+    assert (ns["x"], ns["y"]) == (expected["x"], expected["y"])

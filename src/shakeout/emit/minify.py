@@ -14,6 +14,16 @@ import tokenize
 from shakeout.model import split_lines
 
 
+_TEMPLATE_START = frozenset(
+    getattr(tokenize, name)
+    for name in ("FSTRING_START", "TSTRING_START")
+    if hasattr(tokenize, name)
+)
+_TEMPLATE_END = frozenset(
+    getattr(tokenize, name) for name in ("FSTRING_END", "TSTRING_END") if hasattr(tokenize, name)
+)
+
+
 def minify_lines(source: str, *, strip_docstrings: bool) -> tuple[list[str], frozenset[int]]:
     """Minified copy of ``source`` with the same line count, and rows that must be kept verbatim.
 
@@ -23,11 +33,18 @@ def minify_lines(source: str, *, strip_docstrings: bool) -> tuple[list[str], fro
     """
     lines = [line.rstrip("\n") for line in split_lines(source)]
     verbatim: set[int] = set()
+    # Inside an f-string or t-string (3.12+ tokenizes their parts separately) everything is
+    # value: a self-documenting ``{expr = }`` embeds its source text, spaces and comments too.
+    template_starts: list[int] = []
     for tok in tokenize.generate_tokens(io.StringIO(source).readline):
-        if tok.type == tokenize.COMMENT:
+        if tok.type in _TEMPLATE_START:
+            template_starts.append(tok.start[0])
+        elif tok.type in _TEMPLATE_END and template_starts:
+            verbatim.update(range(template_starts.pop(), tok.end[0]))
+        elif tok.type == tokenize.COMMENT and not template_starts:
             row, col = tok.start
             lines[row - 1] = lines[row - 1][:col]
-        elif tok.start[0] != tok.end[0]:  # multi-line string (or f-string part)
+        elif tok.start[0] != tok.end[0]:  # multi-line string
             verbatim.update(range(tok.start[0], tok.end[0]))
     if strip_docstrings:
         for start, end, col, only in _docstrings(source, lines):
