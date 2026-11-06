@@ -13,7 +13,6 @@ import tokenize
 
 from shakeout.model import split_lines
 
-
 _TEMPLATE_START = frozenset(
     getattr(tokenize, name)
     for name in ("FSTRING_START", "TSTRING_START")
