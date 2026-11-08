@@ -12,9 +12,8 @@ $ uvx shakeout report app/main.py                              # what is kept, a
 $ uvx shakeout why app/main.py pkg.core:helper                 # the chain that keeps a symbol
 ```
 
-**Documentation:** build it with `uv run --group docs mkdocs serve`. The sources are in
-[`docs/`](docs/). Start with [Getting started](docs/getting-started/index.md); the design and
-roadmap are in [docs/project/design.md](docs/project/design.md).
+**Documentation:** https://revmischa.github.io/shakeout/ (sources in [`docs/`](docs/); the
+design and roadmap are in [docs/project/design.md](docs/project/design.md)).
 
 ## Guarantees
 

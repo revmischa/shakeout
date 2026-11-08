@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 import pytest
 
-from shakeout import cli
+from shakeout import __version__, cli
 from shakeout.config import KEYS
 from tests.harness.cases import discover_cases
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover
+    import tomli as tomllib
 
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 
@@ -46,3 +52,10 @@ def test_case_count_claims_are_current() -> None:
             int(n) for n in re.findall(r"(\d+) (?:multi-file programs|cases)", path.read_text())
         }
         assert claims <= {count}, f"{path.name} claims {claims}, catalog has {count}"
+
+
+def test_version_is_consistent() -> None:
+    root = Path(__file__).resolve().parents[1]
+    project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
+    assert project["version"] == __version__
+    assert f"## {__version__} " in (root / "CHANGELOG.md").read_text()
