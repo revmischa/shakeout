@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import os
 import sys
+import sysconfig
 from pathlib import Path
 
 import pytest
@@ -39,13 +40,16 @@ def test_bundled_shakeout_reproduces_its_own_output(tmp_path: Path, tool_target:
             "shakeout_main.py": "from shakeout.cli import main\n\nraise SystemExit(main())\n",
         },
     )
-    # On 3.10 shakeout reads TOML with tomli; bundle (and shake) it too.
-    include = ("tomli",) if sys.version_info < (3, 11) else ()
+    # On 3.10 shakeout reads TOML with tomli; bundle (and shake) it too. It lives in this test
+    # environment, which shakeout deliberately does not search unless told to.
+    legacy = sys.version_info < (3, 11)
+    include = ("tomli",) if legacy else ()
+    search = (sysconfig.get_paths()["purelib"],) if legacy else ()
     tool = build(
         tool_src / "shakeout_main.py",
         root / "tool-out",
         target=tool_target,
-        options=Options(roots=(str(SRC),), include=include),
+        options=Options(roots=(str(SRC),), include=include, search_path=search),
     )
     sample = write_project(root / "sample", SAMPLE)
     for target in ("single", "tree"):
