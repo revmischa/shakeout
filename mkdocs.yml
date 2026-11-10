@@ -1,6 +1,9 @@
 site_name: shakeout
 site_description: A tree-shaking bundler for Python. Smaller deploys, exact tracebacks.
-repo_name: shakeout
+site_url: https://revmischa.github.io/shakeout/
+repo_name: revmischa/shakeout
+repo_url: https://github.com/revmischa/shakeout
+edit_uri: edit/main/docs/
 copyright: MIT licensed
 use_directory_urls: false
 strict: true
