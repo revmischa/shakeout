@@ -6,7 +6,7 @@
 |---|---|
 | `dynamic import at FILE:LINE: the module name is computed at runtime; list possible modules in the keep option` | `import_module(x)` with a computed name. Add the modules to `keep` |
 | `dynamic import at FILE:LINE: bundling every module under 'PKG'` | `import_module("PKG." + x)`: every submodule of `PKG` is bundled |
-| `FILE:LINE uses __file__; files next to the module are not bundled ...` | Data files next to your own modules aren't shipped |
+| `FILE:LINE uses __file__; package data files ship with the tree and lambda targets, ...` | Files next to modules are copied into `tree` and `lambda` outputs. `single` and `pyz` bundles can't read them |
 | `keep option 'SPEC': module 'M' was not found in the roots` | Typo or module outside the roots |
 | `keep option 'SPEC': nothing in the bundle defines 'NAME'` | The module exists but defines no such name |
 | `export 'NAME': nothing in the bundle defines 'NAME'` | The handler name is wrong |

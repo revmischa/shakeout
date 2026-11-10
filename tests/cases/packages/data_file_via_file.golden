@@ -6,4 +6,4 @@ module lib [lib.py] bundled
   + L1        import os  [used as os.path.join]
   + L4-6      def read():  [used as lib.read]
 external: os
-warning: lib.py:5 uses __file__; files next to the module are not bundled and __file__ points to a virtual path
+warning: lib.py:5 uses __file__; package data files ship with the tree and lambda targets, but single and pyz bundles cannot read them

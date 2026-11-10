@@ -30,7 +30,16 @@ from shakeout.analysis.scopes import (
 from shakeout.graph import Reason, Resolver, Shaker, ShakeState
 from shakeout.model import Diagnostic, DynamicUse, Module, ModuleTarget, Ref, Statement
 from shakeout.options import Options
-from shakeout.resolve import Found, ModuleFinder, display_filename, is_pure_external, is_stdlib
+from shakeout.resolve import (
+    Found,
+    ModuleFinder,
+    display_filename,
+    environment_site_dirs,
+    is_pure_external,
+    is_stdlib,
+    project_root,
+    stdlib_path,
+)
 from shakeout.result import ShakeResult
 
 if TYPE_CHECKING:
@@ -64,12 +73,12 @@ class Project:
         self.entry = Path(os.path.realpath(entry))
         self.options = options
         entry_dir = self.entry.parent
-        cwd = Path.cwd().resolve()
         search = [
             str(entry_dir),
             *options.roots,
             *options.search_path,
-            *(p for p in sys.path[1:] if p and Path(p).resolve() != cwd),
+            *environment_site_dirs(project_root(entry_dir)),
+            *stdlib_path(),
         ]
         roots = [entry_dir, *(Path(r) for r in options.roots)]
         self.finder = ModuleFinder(search, roots, frozenset(options.include))
@@ -466,8 +475,8 @@ class _Diagnoser:
         for line in sorted(set(mod.file_uses)):
             if any(st.start <= line <= st.end and self._live(st) for st in mod.statements):
                 self._warn(
-                    f"{mod.filename}:{line} uses __file__; files next to the module are not "
-                    "bundled and __file__ points to a virtual path",
+                    f"{mod.filename}:{line} uses __file__; package data files ship with the tree "
+                    "and lambda targets, but single and pyz bundles cannot read them",
                     mod,
                     line,
                 )

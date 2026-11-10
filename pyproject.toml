@@ -94,6 +94,7 @@ patch = ["subprocess"]  # measure `python -m shakeout` runs started by the CLI t
 show_missing = true
 skip_covered = true
 fail_under = 96
+precision = 2  # compare exactly (the default rounds 95.99 up to 96)
 exclude_also = [
   "if TYPE_CHECKING:",
   "raise NotImplementedError",

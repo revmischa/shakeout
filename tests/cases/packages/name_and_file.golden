@@ -7,4 +7,4 @@ module pkg.mod [pkg/mod.py] bundled
   + L2        PKG = __package__  [used as mod.PKG]
   + L3        SPEC = __spec__.name  [used as mod.SPEC]
   + L4        IS_FILE_SET = __file__.endswith("mod.py")  [root: initializer "__file__.endswith('mod.py')" may have side effects]
-warning: pkg/mod.py:4 uses __file__; files next to the module are not bundled and __file__ points to a virtual path
+warning: pkg/mod.py:4 uses __file__; package data files ship with the tree and lambda targets, but single and pyz bundles cannot read them

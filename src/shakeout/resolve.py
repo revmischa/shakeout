@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import pkgutil
 import sys
+import sysconfig
 from dataclasses import dataclass
 from functools import cache
 from importlib.machinery import EXTENSION_SUFFIXES, PathFinder
@@ -133,3 +134,48 @@ def display_filename(name: str, found: Found) -> str:
     if found.is_package:
         return f"{base}/{found.origin.name}"
     return base + found.origin.suffix
+
+
+def project_root(start: Path) -> Path:
+    """The directory of the nearest ``pyproject.toml`` at or above ``start``, else ``start``."""
+    for directory in [start, *start.parents]:
+        if (directory / "pyproject.toml").is_file():
+            return directory
+    return start
+
+
+def stdlib_path() -> list[str]:
+    """Standard-library directories of the running interpreter (never its site-packages)."""
+    paths = sysconfig.get_paths()
+    platstdlib = Path(paths["platstdlib"])
+    dirs = [Path(paths["stdlib"]), platstdlib, platstdlib / "lib-dynload"]
+    zips = [p for p in sys.path if p.endswith(".zip")]
+    return list(dict.fromkeys([*(str(d) for d in dirs if d.is_dir()), *zips]))
+
+
+def environment_site_dirs(project: Path) -> list[str]:
+    """Third-party package directories of the project's environment.
+
+    In order: an activated virtual environment other than the one shakeout runs in, a ``.venv``
+    in the project, and the running interpreter's environment only if it lives inside the project
+    (``uv run shakeout`` in a project that depends on shakeout). Packages that are merely installed
+    wherever shakeout itself is installed are never used.
+    """
+    prefix = Path(sys.prefix).resolve()
+    roots: list[Path] = []
+    active = os.environ.get("VIRTUAL_ENV")
+    if active and Path(active).resolve() != prefix:
+        roots.append(Path(active))
+    roots.append(project / ".venv")
+    dirs = [d for root in roots for d in _venv_site_dirs(root)]
+    if prefix.is_relative_to(project.resolve()):
+        paths = sysconfig.get_paths()
+        dirs += [paths["purelib"], paths["platlib"]]
+    return list(dict.fromkeys(d for d in dirs if Path(d).is_dir()))
+
+
+def _venv_site_dirs(root: Path) -> list[str]:
+    lib = root / "lib"
+    found = sorted(str(p) for p in lib.glob("python*/site-packages")) if lib.is_dir() else []
+    windows = root / "Lib" / "site-packages"
+    return [*found, *([str(windows)] if windows.is_dir() else [])]

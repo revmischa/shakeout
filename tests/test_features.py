@@ -354,3 +354,51 @@ def test_trace_restores_original_lines_of_a_minified_bundle(tmp_path: Path) -> N
     )
     assert "raise ValueError('boom')  # explain" in proc.stdout
     assert "fail()  # call it" in proc.stdout
+
+
+def test_tool_environment_packages_are_never_vendored(tmp_path: Path) -> None:
+    # hypothesis is installed in shakeout's own (test) environment, not in this project's.
+    src = write_project(
+        tmp_path / "app",
+        {
+            "main.py": (
+                "try:\n    import hypothesis\nexcept ImportError:\n    hypothesis = None\n"
+                "print(hypothesis is None)\n"
+            ),
+        },
+    )
+    built = build(src / "main.py", tmp_path / "out", target="tree")
+    assert built.manifest["dependencies"] == []
+    assert not (tmp_path / "out" / "hypothesis").exists()
+
+
+def test_project_venv_supplies_third_party_packages(tmp_path: Path) -> None:
+    pyver = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    site = tmp_path / "app" / ".venv" / "lib" / pyver / "site-packages"
+    _fake_distribution(site)
+    src = write_project(tmp_path / "app", {"main.py": "import thirdpkg\nprint(thirdpkg.data())\n"})
+    built = build(src / "main.py", tmp_path / "out", target="tree")
+    assert built.manifest["dependencies"] == ["thirdpkg"]
+    assert run_python(built.run_path, cwd=tmp_path).stdout == "payload\n"
+
+
+def test_package_data_files_ship_with_first_party_packages(tmp_path: Path) -> None:
+    src = write_project(
+        tmp_path / "app",
+        {
+            "main.py": "import certs\nprint(certs.where_text())\n",
+            "certs/__init__.py": (
+                "import os\n\n\ndef where_text():\n"
+                "    with open(os.path.join(os.path.dirname(__file__), 'cacert.pem')) as fh:\n"
+                "        return fh.read().strip()\n"
+            ),
+            "certs/cacert.pem": "-----BEGIN CERTIFICATE-----",
+            "certs/__pycache__/junk.pyc": "x",
+            "notes.txt": "repo junk next to the entry is not package data",
+        },
+    )
+    built = build(src / "main.py", tmp_path / "out", target="tree")
+    assert built.manifest["package_data"] == ["certs/cacert.pem"]
+    assert not (tmp_path / "out" / "certs" / "__pycache__").exists()
+    assert not (tmp_path / "out" / "notes.txt").exists()
+    assert run_python(built.run_path, cwd=tmp_path).stdout == "-----BEGIN CERTIFICATE-----\n"

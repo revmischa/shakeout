@@ -16,6 +16,7 @@ from shakeout.emit import (
     manifest,
     write_manifest,
 )
+from shakeout.emit.data import copy_package_data
 from shakeout.emit.deps import copy_dependencies
 
 if TYPE_CHECKING:
@@ -53,6 +54,7 @@ def write_tree(result: ShakeResult, out: Path, *, target: str = "tree") -> Build
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(source, encoding="utf-8")
     meta = manifest(result, contents, target)
+    meta["package_data"] = copy_package_data(result, out)
     if result.options.copy_dependencies:
         meta["dependencies"] = copy_dependencies(result, out)
     write_manifest(out / "shakeout-manifest.json", meta)

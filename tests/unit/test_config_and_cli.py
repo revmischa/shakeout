@@ -13,7 +13,7 @@ import pytest
 from shakeout import cli
 from shakeout.api import Options, analyze, build
 from shakeout.config import ConfigError, find_pyproject, load_config
-from shakeout.resolve import ModuleFinder
+from shakeout.resolve import ModuleFinder, environment_site_dirs, project_root, stdlib_path
 from shakeout.uvstage import StagingError, stage
 from tests.harness.project import write_project
 
@@ -190,3 +190,34 @@ def test_keep_symbol_naming_a_submodule_keeps_it_whole(tmp_path: Path) -> None:
     assert {"pkg.plugin:a", "pkg.plugin:b"} <= result.kept
     reason = result.reasons["pkg.plugin", 0]
     assert (reason.kind, reason.detail) == ("whole", "keep option pkg:plugin")
+
+
+def test_environment_site_dirs_prefers_project_environments(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pyver = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    project = tmp_path / "proj"
+    project_site = project / ".venv" / "lib" / pyver / "site-packages"
+    active_site = tmp_path / "active" / "lib" / pyver / "site-packages"
+    for d in (project_site, active_site):
+        d.mkdir(parents=True)
+    monkeypatch.setenv("VIRTUAL_ENV", str(tmp_path / "active"))
+    assert environment_site_dirs(project) == [str(active_site), str(project_site)]
+    # The environment shakeout itself runs in is only used when it lives inside the project.
+    monkeypatch.setenv("VIRTUAL_ENV", sys.prefix)
+    assert environment_site_dirs(project) == [str(project_site)]
+    # `uv run shakeout` inside the project: the active environment is the one running shakeout.
+    monkeypatch.setattr(sys, "prefix", str(project / ".venv"))
+    monkeypatch.setenv("VIRTUAL_ENV", str(project / ".venv"))
+    own = environment_site_dirs(project)
+    assert own[0] == str(project_site)
+    assert all("pybund/.venv" not in d for d in own[:1])
+    assert project_root(project / "src") == project / "src"
+    (project / "pyproject.toml").write_text("[project]\nname = 'x'\n")
+    assert project_root(project / "src" / "pkg") == project
+
+
+def test_stdlib_path_excludes_site_packages() -> None:
+    dirs = stdlib_path()
+    assert dirs
+    assert not any("site-packages" in d for d in dirs)
