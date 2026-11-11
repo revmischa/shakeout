@@ -10,11 +10,6 @@ Fixes found by bundling a real Lambda function.
   one Lambda package shrank from 15.7 MB to 1.6 MB.
 - `tree` and `lambda` targets ship data files inside your own packages, such as a vendored
   `certifi/cacert.pem`. Before, HTTPS from the bundle could fail for lack of the CA bundle.
-- Minify keeps multi-line f-string and t-string interiors verbatim. A self-documenting
-  `{expr = }` embeds its source text, so stripping spaces or comments changed the value.
-- Zipapps work with namespace packages on Python 3.13 and earlier, and show source lines in
-  tracebacks on 3.12 and earlier.
-- Python 3.10 installs declare their `tomli` dependency.
 
 ## 0.1.0 (2026-11-08)
 
